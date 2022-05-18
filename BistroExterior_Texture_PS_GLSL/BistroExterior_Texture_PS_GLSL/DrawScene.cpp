@@ -592,6 +592,92 @@ void display(void) {
 	glutSwapBuffers();
 }
 
+#define CAM_TSPEED 10.0f
+
+void renew_cam_position(int dir) {
+
+	set_ViewMatrix_from_camera_frame();
+	glm::mat4 invViewMatrix = glm::inverse(ViewMatrix);
+	if (dir == 0)
+	{
+		glm::vec4 new_cam_pos = invViewMatrix * glm::vec4(0, 0, -CAM_TSPEED, 1);
+		current_camera.pos[0] = new_cam_pos[0];
+		current_camera.pos[1] = new_cam_pos[1];
+		current_camera.pos[2] = new_cam_pos[2];
+	}
+	else if (dir == 1)
+	{
+		glm::vec4 new_cam_pos = invViewMatrix * glm::vec4(0, 0, +CAM_TSPEED, 1);
+		current_camera.pos[0] = new_cam_pos[0];
+		current_camera.pos[1] = new_cam_pos[1];
+		current_camera.pos[2] = new_cam_pos[2];
+	}
+	else if (dir == 2)
+	{
+		glm::vec4 new_cam_pos = invViewMatrix * glm::vec4(CAM_TSPEED, 0, 0, 1);
+		current_camera.pos[0] = new_cam_pos[0];
+		current_camera.pos[1] = new_cam_pos[1];
+		current_camera.pos[2] = new_cam_pos[2];
+	}
+	else if (dir == 3)
+	{
+		glm::vec4 new_cam_pos = invViewMatrix * glm::vec4(-CAM_TSPEED, 0, 0, 1);
+		current_camera.pos[0] = new_cam_pos[0];
+		current_camera.pos[1] = new_cam_pos[1];
+		current_camera.pos[2] = new_cam_pos[2];
+	}
+	else if (dir == 4)
+	{
+		glm::vec4 new_cam_pos = invViewMatrix * glm::vec4(0, CAM_TSPEED, 0, 1);
+		current_camera.pos[0] = new_cam_pos[0];
+		current_camera.pos[1] = new_cam_pos[1];
+		current_camera.pos[2] = new_cam_pos[2];
+	}
+	else if (dir == 5)
+	{
+		glm::vec4 new_cam_pos = invViewMatrix * glm::vec4(0, -CAM_TSPEED, 0, 1);
+		current_camera.pos[0] = new_cam_pos[0];
+		current_camera.pos[1] = new_cam_pos[1];
+		current_camera.pos[2] = new_cam_pos[2];
+	}
+}
+
+#define CAM_RSPEED 0.1f
+void renew_cam_orientation_rotation_around_v_axis(int angle) {
+	// let's get a help from glm
+	glm::mat3 RotationMatrix;
+	glm::vec3 direction;
+	glm::vec3 uaxis = glm::vec3(current_camera.uaxis[0], current_camera.uaxis[1], current_camera.uaxis[2]);
+	glm::vec3 vaxis = glm::vec3(current_camera.vaxis[0], current_camera.vaxis[1], current_camera.vaxis[2]);
+	glm::vec3 naxis = glm::vec3(current_camera.naxis[0], current_camera.naxis[1], current_camera.naxis[2]);
+
+	RotationMatrix = glm::mat3(glm::rotate(glm::mat4(1.0), CAM_RSPEED * TO_RADIAN * angle,
+		vaxis));
+
+	direction = RotationMatrix * uaxis;
+	current_camera.uaxis[0] = direction[0];
+	current_camera.uaxis[1] = direction[1];
+	current_camera.uaxis[2] = direction[2];
+	direction = RotationMatrix * naxis;
+	current_camera.naxis[0] = direction[0];
+	current_camera.naxis[1] = direction[1];
+	current_camera.naxis[2] = direction[2];
+
+	// TODO: Correct uaxis, vaxis, and naxis so that they continue to be orthonormal!!!
+}
+
+int world_ob_cam;
+
+void move_camera(int direction_num)
+{	
+	if (!world_ob_cam)
+		return;
+	renew_cam_position(direction_num);
+	set_ViewMatrix_from_camera_frame();
+	ViewProjectionMatrix = ProjectionMatrix * ViewMatrix;
+	glutPostRedisplay();
+}
+
 void keyboard(unsigned char key, int x, int y) {
 	switch (key) {
 	case 'f':
@@ -624,6 +710,27 @@ void keyboard(unsigned char key, int x, int y) {
 		break;
 	case 27: // ESC key
 		glutLeaveMainLoop(); // Incur destuction callback for cleanups.
+		break;
+	case 'm':
+		world_ob_cam = ~world_ob_cam;
+		break;
+	case 'w':
+		move_camera(0);
+		break;
+	case 's':
+		move_camera(1);
+		break;
+	case 'd':
+		move_camera(2);
+		break;
+	case 'a':
+		move_camera(3);
+		break;
+	case 'e':
+		move_camera(4);
+		break;
+	case 'q':
+		move_camera(5);
 		break;
 	}
 }
