@@ -601,6 +601,7 @@ void renew_cam_position(int dir) {
 	glm::mat4 invViewMatrix = glm::inverse(ViewMatrix);
 	glm::vec4 new_cam_pos;
 
+	//ec 에서 camera pos가 이동한 위치를 Mv의 inverse를 통해 wc 에서 위치로 변환
 	if (dir == 0)
 		new_cam_pos = invViewMatrix * glm::vec4(0, 0, -CAM_TSPEED, 1);
 	else if (dir == 1)
@@ -611,7 +612,7 @@ void renew_cam_position(int dir) {
 		new_cam_pos = invViewMatrix * glm::vec4(-CAM_TSPEED, 0, 0, 1);
 	else if (dir == 4)
 		new_cam_pos = invViewMatrix * glm::vec4(0, CAM_TSPEED, 0, 1);
-	else if (dir == 5)
+	else
 		new_cam_pos = invViewMatrix * glm::vec4(0, -CAM_TSPEED, 0, 1);
 
 	current_camera.pos[0] = new_cam_pos[0];
@@ -647,9 +648,72 @@ int world_ob_cam;
 
 void move_camera(int direction_num)
 {	
-	if (!world_ob_cam)
+	if (world_ob_cam == 0)
 		return;
+
 	renew_cam_position(direction_num);
+	set_ViewMatrix_from_camera_frame();
+	ViewProjectionMatrix = ProjectionMatrix * ViewMatrix;
+	glutPostRedisplay();
+}
+
+int left_button;
+
+#define CAM_ANGLE 1.0f
+
+void mouse(int button, int state, int x, int y) {
+	if ((button == GLUT_LEFT_BUTTON)) {
+		if (state == GLUT_DOWN)
+			left_button = 1;
+		else if (state == GLUT_UP)
+			left_button = 0;
+	}
+}
+
+void rotate_camera(int axis)
+{
+	glm::mat4 axis_rotate;
+	glm::vec3 uaxis = glm::vec3(current_camera.uaxis[0], current_camera.uaxis[1], current_camera.uaxis[2]);
+	glm::vec3 vaxis = glm::vec3(current_camera.vaxis[0], current_camera.vaxis[1], current_camera.vaxis[2]);
+	glm::vec3 naxis = glm::vec3(current_camera.naxis[0], current_camera.naxis[1], current_camera.naxis[2]);
+	glm::vec3 new_uaxis, new_vaxis, new_naxis;
+	float angle = TO_RADIAN * CAM_ANGLE;
+
+	if (left_button == 0)
+		angle *= -1;
+
+	if (axis == 0)
+	{
+		axis_rotate = glm::rotate(glm::mat4(1.0f), angle, glm::vec3(uaxis[0], uaxis[1], uaxis[2]));
+		new_uaxis = uaxis;
+		new_vaxis = glm::vec3(axis_rotate * glm::vec4(vaxis, 1));
+		new_naxis = glm::vec3(axis_rotate * glm::vec4(naxis, 1));
+	}
+	else if (axis == 1)
+	{
+		axis_rotate = glm::rotate(glm::mat4(1.0f), angle, glm::vec3(vaxis[0], vaxis[1], vaxis[2]));
+		new_uaxis = glm::vec3(axis_rotate * glm::vec4(uaxis, 1));
+		new_vaxis = vaxis;
+		new_naxis = glm::vec3(axis_rotate * glm::vec4(naxis, 1));
+	}
+	else
+	{
+		axis_rotate = glm::rotate(glm::mat4(1.0f), angle, glm::vec3(naxis[0], naxis[1], naxis[2]));
+		new_uaxis = glm::vec3(axis_rotate * glm::vec4(uaxis, 1));
+		new_vaxis = glm::vec3(axis_rotate * glm::vec4(vaxis, 1));
+		new_naxis = naxis;
+	}
+
+	current_camera.uaxis[0] = new_uaxis[0];
+	current_camera.uaxis[1] = new_uaxis[1];
+	current_camera.uaxis[2] = new_uaxis[2];
+	current_camera.vaxis[0] = new_vaxis[0];
+	current_camera.vaxis[1] = new_vaxis[1];
+	current_camera.vaxis[2] = new_vaxis[2];
+	current_camera.naxis[0] = new_naxis[0];
+	current_camera.naxis[1] = new_naxis[1];
+	current_camera.naxis[2] = new_naxis[2];
+
 	set_ViewMatrix_from_camera_frame();
 	ViewProjectionMatrix = ProjectionMatrix * ViewMatrix;
 	glutPostRedisplay();
@@ -709,10 +773,17 @@ void keyboard(unsigned char key, int x, int y) {
 	case 'q':
 		move_camera(5);
 		break;
+	case 'u':
+		rotate_camera(0);
+		break;
+	case 'v':
+		rotate_camera(1);
+		break;
+	case 'n':
+		rotate_camera(2);
+		break;
 	}
 }
-
-#define CAM_ANGLE 1.0f
 
 void mousewheel(int button, int dir, int x, int y) {
 	int mod = glutGetModifiers();
@@ -765,6 +836,7 @@ void cleanup(void) {
 void register_callbacks(void) {
 	glutDisplayFunc(display);
 	glutKeyboardFunc(keyboard);
+	glutMouseFunc(mouse);
 	glutMouseWheelFunc(mousewheel);
 	glutReshapeFunc(reshape);
 	glutCloseFunc(cleanup);
