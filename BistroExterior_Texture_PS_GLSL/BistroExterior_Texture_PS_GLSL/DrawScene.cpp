@@ -83,6 +83,7 @@ void set_current_camera(int camera_num) {
 
 	memcpy(&current_camera, pCamera, sizeof(Camera));
 	set_ViewMatrix_from_camera_frame();
+	ProjectionMatrix = glm::perspective(current_camera.fovy, current_camera.aspect_ratio, current_camera.near_c, current_camera.far_c);
 	ViewProjectionMatrix = ProjectionMatrix * ViewMatrix;
 }
 
@@ -598,48 +599,24 @@ void renew_cam_position(int dir) {
 
 	set_ViewMatrix_from_camera_frame();
 	glm::mat4 invViewMatrix = glm::inverse(ViewMatrix);
+	glm::vec4 new_cam_pos;
+
 	if (dir == 0)
-	{
-		glm::vec4 new_cam_pos = invViewMatrix * glm::vec4(0, 0, -CAM_TSPEED, 1);
-		current_camera.pos[0] = new_cam_pos[0];
-		current_camera.pos[1] = new_cam_pos[1];
-		current_camera.pos[2] = new_cam_pos[2];
-	}
+		new_cam_pos = invViewMatrix * glm::vec4(0, 0, -CAM_TSPEED, 1);
 	else if (dir == 1)
-	{
-		glm::vec4 new_cam_pos = invViewMatrix * glm::vec4(0, 0, +CAM_TSPEED, 1);
-		current_camera.pos[0] = new_cam_pos[0];
-		current_camera.pos[1] = new_cam_pos[1];
-		current_camera.pos[2] = new_cam_pos[2];
-	}
+		new_cam_pos = invViewMatrix * glm::vec4(0, 0, +CAM_TSPEED, 1);
 	else if (dir == 2)
-	{
-		glm::vec4 new_cam_pos = invViewMatrix * glm::vec4(CAM_TSPEED, 0, 0, 1);
-		current_camera.pos[0] = new_cam_pos[0];
-		current_camera.pos[1] = new_cam_pos[1];
-		current_camera.pos[2] = new_cam_pos[2];
-	}
+		new_cam_pos = invViewMatrix * glm::vec4(CAM_TSPEED, 0, 0, 1);
 	else if (dir == 3)
-	{
-		glm::vec4 new_cam_pos = invViewMatrix * glm::vec4(-CAM_TSPEED, 0, 0, 1);
-		current_camera.pos[0] = new_cam_pos[0];
-		current_camera.pos[1] = new_cam_pos[1];
-		current_camera.pos[2] = new_cam_pos[2];
-	}
+		new_cam_pos = invViewMatrix * glm::vec4(-CAM_TSPEED, 0, 0, 1);
 	else if (dir == 4)
-	{
-		glm::vec4 new_cam_pos = invViewMatrix * glm::vec4(0, CAM_TSPEED, 0, 1);
-		current_camera.pos[0] = new_cam_pos[0];
-		current_camera.pos[1] = new_cam_pos[1];
-		current_camera.pos[2] = new_cam_pos[2];
-	}
+		new_cam_pos = invViewMatrix * glm::vec4(0, CAM_TSPEED, 0, 1);
 	else if (dir == 5)
-	{
-		glm::vec4 new_cam_pos = invViewMatrix * glm::vec4(0, -CAM_TSPEED, 0, 1);
-		current_camera.pos[0] = new_cam_pos[0];
-		current_camera.pos[1] = new_cam_pos[1];
-		current_camera.pos[2] = new_cam_pos[2];
-	}
+		new_cam_pos = invViewMatrix * glm::vec4(0, -CAM_TSPEED, 0, 1);
+
+	current_camera.pos[0] = new_cam_pos[0];
+	current_camera.pos[1] = new_cam_pos[1];
+	current_camera.pos[2] = new_cam_pos[2];
 }
 
 #define CAM_RSPEED 0.1f
@@ -735,6 +712,23 @@ void keyboard(unsigned char key, int x, int y) {
 	}
 }
 
+#define CAM_ANGLE 1.0f
+
+void mousewheel(int button, int dir, int x, int y) {
+	int mod = glutGetModifiers();
+
+	if (mod != GLUT_ACTIVE_SHIFT)
+		return;
+	if (dir > 0)
+		current_camera.fovy -= TO_RADIAN * CAM_ANGLE;
+	else
+		current_camera.fovy += TO_RADIAN * CAM_ANGLE;
+
+	ProjectionMatrix = glm::perspective(current_camera.fovy, current_camera.aspect_ratio, current_camera.near_c, current_camera.far_c);
+	ViewProjectionMatrix = ProjectionMatrix * ViewMatrix;
+	glutPostRedisplay();
+}
+
 void reshape(int width, int height) {
 	float aspect_ratio;
 
@@ -771,6 +765,7 @@ void cleanup(void) {
 void register_callbacks(void) {
 	glutDisplayFunc(display);
 	glutKeyboardFunc(keyboard);
+	glutMouseWheelFunc(mousewheel);
 	glutReshapeFunc(reshape);
 	glutCloseFunc(cleanup);
 }
