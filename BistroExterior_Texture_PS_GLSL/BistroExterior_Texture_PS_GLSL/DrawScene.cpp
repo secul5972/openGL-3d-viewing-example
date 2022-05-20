@@ -581,7 +581,6 @@ int tiger_n_triangles[N_TIGER_FRAMES];
 int tiger_vertex_offset[N_TIGER_FRAMES];
 GLfloat* tiger_vertices[N_TIGER_FRAMES];
 int cur_frame_tiger = 0;
-float rotation_angle_tiger = 0.0f;
 
 int read_geometry(GLfloat** object, int bytes_per_primitive, char* filename) {
 	int n_triangles;
@@ -655,21 +654,42 @@ void prepare_objects(void) {
 int timestamp_scene;
 
 void draw_objects(void) {
+	float rotation_angle_tiger = 0.0f;
+	float turn_angle_tiger = 0.0f;
+	float t;
+	
 	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 	
 	glUseProgram(h_ShaderProgram_simple);
 	
 	if (timestamp_scene < 90)
 	{
-		ModelViewMatrix = glm::translate(ViewMatrix, glm::vec3(1248.503662, 4097.601562, 100));
+		rotation_angle_tiger = ((timestamp_scene / 20 - 60) % 360) * TO_RADIAN;
+		turn_angle_tiger = (timestamp_scene) % 360 * TO_RADIAN;
+		//회전 중심점
+		ModelViewMatrix = glm::translate(ViewMatrix, glm::vec3(1136.181763, 3716.681641, 10));
+		ModelViewMatrix = glm::rotate(ModelViewMatrix, -turn_angle_tiger, glm::vec3(0.0f, 0.0f, 1.0f));
+		ModelViewMatrix = glm::translate(ModelViewMatrix, glm::vec3(112.321899, 380.919921, 0));
 		ModelViewMatrix = glm::rotate(ModelViewMatrix, -rotation_angle_tiger, glm::vec3(0.0f, 0.0f, 1.0f));
-		//ModelViewMatrix = glm::translate(ModelViewMatrix, glm::vec3(200.0f, 0.0f, 0.0f));
-		//ModelViewMatrix = glm::rotate(ModelViewMatrix, -90.0f * TO_RADIAN, glm::vec3(1.0f, 0.0f, 0.0f));
+	}
+	else if (timestamp_scene >= 90 && timestamp_scene < 390)
+	{
+		t = float(timestamp_scene - 90) / 300;
+		ModelViewMatrix = glm::translate(ViewMatrix, glm::vec3(1517.101684 + t * (166.990982 - 1517.101684)
+			, 3604.359742 + t * (1494.852051 - 3604.359742), 10));
+		ModelViewMatrix = glm::rotate(ModelViewMatrix, -35 * TO_RADIAN, glm::vec3(0.0f, 0.0f, 1.0f));
+	}
+	else if (timestamp_scene >= 390 && timestamp_scene < 540)
+	{
+		t = float(timestamp_scene - 390) / 150;
+		ModelViewMatrix = glm::translate(ViewMatrix, glm::vec3(166.990982 + t * (-479.434540 - 166.990982)
+			, 1494.852051 + t * (733.972229 - 1494.852051), 10));
+		ModelViewMatrix = glm::rotate(ModelViewMatrix, -36 * TO_RADIAN, glm::vec3(0.0f, 0.0f, 1.0f));
 	}
 	else
 	{
-		ModelViewMatrix = glm::translate(ViewMatrix, glm::vec3(1248.503662, 4097.601562, 100));
-		ModelViewMatrix = glm::rotate(ModelViewMatrix, -TO_RADIAN * 90, glm::vec3(0.0f, 0.0f, 1.0f));
+		ModelViewMatrix = glm::translate(ViewMatrix, glm::vec3(-479.434540, 733.972229, 10));
+		ModelViewMatrix = glm::rotate(ModelViewMatrix, -36 * TO_RADIAN, glm::vec3(0.0f, 0.0f, 1.0f));
 	}
 
 	ModelViewProjectionMatrix = ProjectionMatrix * ModelViewMatrix;
@@ -824,6 +844,7 @@ void rotate_camera(int axis)
 	ViewProjectionMatrix = ProjectionMatrix * ViewMatrix;
 	glutPostRedisplay();
 }
+int stop_flag;
 
 void keyboard(unsigned char key, int x, int y) {
 	switch (key) {
@@ -888,6 +909,10 @@ void keyboard(unsigned char key, int x, int y) {
 	case 'n':
 		rotate_camera(2);
 		break;
+	case 'r':
+		stop_flag = ~stop_flag;
+		break;
+
 	}
 }
 
@@ -918,9 +943,9 @@ void reshape(int width, int height) {
 
 void timer_scene(int value) {
 	cur_frame_tiger = timestamp_scene % N_TIGER_FRAMES;
-	rotation_angle_tiger = (timestamp_scene - 60 % 360) * TO_RADIAN;
 	glutPostRedisplay();
-	//timestamp_scene = (timestamp_scene + 1) % INT_MAX;
+	if (stop_flag == 0)
+		timestamp_scene = (timestamp_scene + 1) % INT_MAX;
 	glutTimerFunc(100, timer_scene, 0);
 }
 
