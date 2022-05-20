@@ -572,12 +572,116 @@ void draw_bistro_exterior(void) {
 }
 
 // TO DO
-void prepare_objects(void) {
-	/* fill your code here */
+
+#define LOC_VERTEX 0
+#define N_TIGER_FRAMES 12
+
+GLuint tiger_VBO, tiger_VAO;
+int tiger_n_triangles[N_TIGER_FRAMES];
+int tiger_vertex_offset[N_TIGER_FRAMES];
+GLfloat* tiger_vertices[N_TIGER_FRAMES];
+int cur_frame_tiger = 0;
+float rotation_angle_tiger = 0.0f;
+
+int read_geometry(GLfloat** object, int bytes_per_primitive, char* filename) {
+	int n_triangles;
+	FILE* fp;
+
+	// fprintf(stdout, "Reading geometry from the geometry file %s...\n", filename);
+	fp = fopen(filename, "rb");
+	if (fp == NULL) {
+		fprintf(stderr, "Cannot open the object file %s ...", filename);
+		return -1;
+	}
+	fread(&n_triangles, sizeof(int), 1, fp);
+	*object = (float*)malloc(n_triangles * bytes_per_primitive);
+	if (*object == NULL) {
+		fprintf(stderr, "Cannot allocate memory for the geometry file %s ...", filename);
+		return -1;
+	}
+
+	fread(*object, bytes_per_primitive, n_triangles, fp);
+	// fprintf(stdout, "Read %d primitives successfully.\n\n", n_triangles);
+	fclose(fp);
+
+	return n_triangles;
 }
 
+void prepare_objects(void) {
+	int i, n_bytes_per_vertex, n_bytes_per_triangle, tiger_n_total_triangles = 0;
+	char filename[512];
+
+	n_bytes_per_vertex = 8 * sizeof(float); // 3 for vertex, 3 for normal, and 2 for texcoord
+	n_bytes_per_triangle = 3 * n_bytes_per_vertex;
+
+	for (i = 0; i < N_TIGER_FRAMES; i++) {
+		sprintf(filename, "Data/Tiger_%d%d_triangles_vnt.geom", i / 10, i % 10);
+		tiger_n_triangles[i] = read_geometry(&tiger_vertices[i], n_bytes_per_triangle, filename);
+		// Assume all geometry files are effective.
+		tiger_n_total_triangles += tiger_n_triangles[i];
+
+		if (i == 0)
+			tiger_vertex_offset[i] = 0;
+		else
+			tiger_vertex_offset[i] = tiger_vertex_offset[i - 1] + 3 * tiger_n_triangles[i - 1];
+	}
+
+	// Initialize vertex buffer object.
+	glGenBuffers(1, &tiger_VBO);
+
+	glBindBuffer(GL_ARRAY_BUFFER, tiger_VBO);
+	glBufferData(GL_ARRAY_BUFFER, tiger_n_total_triangles * n_bytes_per_triangle, NULL, GL_STATIC_DRAW);
+
+	for (i = 0; i < N_TIGER_FRAMES; i++)
+		glBufferSubData(GL_ARRAY_BUFFER, tiger_vertex_offset[i] * n_bytes_per_vertex,
+			tiger_n_triangles[i] * n_bytes_per_triangle, tiger_vertices[i]);
+
+	// As the geometry data exists now in graphics memory, ...
+	for (i = 0; i < N_TIGER_FRAMES; i++)
+		free(tiger_vertices[i]);
+
+	// Initialize vertex array object.
+	glGenVertexArrays(1, &tiger_VAO);
+	glBindVertexArray(tiger_VAO);
+
+	glBindBuffer(GL_ARRAY_BUFFER, tiger_VBO);
+	glVertexAttribPointer(LOC_VERTEX, 3, GL_FLOAT, GL_FALSE, n_bytes_per_vertex, BUFFER_OFFSET(0));
+
+	glEnableVertexAttribArray(0);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glBindVertexArray(0);
+}
+
+int timestamp_scene;
+
 void draw_objects(void) {
-	/* fill your code here */
+	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+	
+	glUseProgram(h_ShaderProgram_simple);
+	
+	if (timestamp_scene < 90)
+	{
+		ModelViewMatrix = glm::translate(ViewMatrix, glm::vec3(1248.503662, 4097.601562, 100));
+		ModelViewMatrix = glm::rotate(ModelViewMatrix, -rotation_angle_tiger, glm::vec3(0.0f, 0.0f, 1.0f));
+		//ModelViewMatrix = glm::translate(ModelViewMatrix, glm::vec3(200.0f, 0.0f, 0.0f));
+		//ModelViewMatrix = glm::rotate(ModelViewMatrix, -90.0f * TO_RADIAN, glm::vec3(1.0f, 0.0f, 0.0f));
+	}
+	else
+	{
+		ModelViewMatrix = glm::translate(ViewMatrix, glm::vec3(1248.503662, 4097.601562, 100));
+		ModelViewMatrix = glm::rotate(ModelViewMatrix, -TO_RADIAN * 90, glm::vec3(0.0f, 0.0f, 1.0f));
+	}
+
+	ModelViewProjectionMatrix = ProjectionMatrix * ModelViewMatrix;
+
+	glUniformMatrix4fv(loc_ModelViewProjectionMatrix, 1, GL_FALSE, &ModelViewProjectionMatrix[0][0]);
+	glUniform3f(loc_primitive_color, 1.0f, 0.0f, 1.0f); // Tiger wireframe color = magenta
+
+	glBindVertexArray(tiger_VAO);
+	glDrawArrays(GL_TRIANGLES, tiger_vertex_offset[cur_frame_tiger], 3 * tiger_n_triangles[cur_frame_tiger]);
+	glBindVertexArray(0);
+	glUseProgram(0);
+	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 }
 /*****************************  END: geometry setup *****************************/
 
@@ -591,6 +695,7 @@ void display(void) {
 	draw_objects();
 
 	glutSwapBuffers();
+
 }
 
 #define CAM_TSPEED 10.0f
@@ -654,6 +759,7 @@ void move_camera(int direction_num)
 	renew_cam_position(direction_num);
 	set_ViewMatrix_from_camera_frame();
 	ViewProjectionMatrix = ProjectionMatrix * ViewMatrix;
+	printf("%f %f %f\n", current_camera.pos[0], current_camera.pos[1], current_camera.pos[2]);
 	glutPostRedisplay();
 }
 
@@ -810,6 +916,14 @@ void reshape(int width, int height) {
 	glutPostRedisplay();
 }
 
+void timer_scene(int value) {
+	cur_frame_tiger = timestamp_scene % N_TIGER_FRAMES;
+	rotation_angle_tiger = (timestamp_scene - 60 % 360) * TO_RADIAN;
+	glutPostRedisplay();
+	//timestamp_scene = (timestamp_scene + 1) % INT_MAX;
+	glutTimerFunc(100, timer_scene, 0);
+}
+
 void cleanup(void) {
 	glDeleteVertexArrays(1, &axes_VAO);
 	glDeleteBuffers(1, &axes_VBO);
@@ -819,6 +933,9 @@ void cleanup(void) {
 
 	glDeleteVertexArrays(scene.n_materials, bistro_exterior_VAO);
 	glDeleteBuffers(scene.n_materials, bistro_exterior_VBO);
+
+	glDeleteVertexArrays(1, &tiger_VAO);
+	glDeleteBuffers(1, &tiger_VBO);
 
 	glDeleteTextures(scene.n_textures, bistro_exterior_texture_names);
 
@@ -839,6 +956,7 @@ void register_callbacks(void) {
 	glutMouseFunc(mouse);
 	glutMouseWheelFunc(mousewheel);
 	glutReshapeFunc(reshape);
+	glutTimerFunc(100, timer_scene, 0);
 	glutCloseFunc(cleanup);
 }
 
