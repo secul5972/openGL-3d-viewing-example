@@ -651,7 +651,7 @@ void prepare_objects(void) {
 	glBindVertexArray(0);
 }
 
-int timestamp_scene = 500;
+int timestamp_scene = 900;
 int tiger_y_turn_flag;
 
 void draw_objects(void) {
@@ -715,20 +715,17 @@ void draw_objects(void) {
 			, -659.739380, 310 - t * 300));
 		ModelViewMatrix = glm::rotate(ModelViewMatrix, (-20 + t * 85) * TO_RADIAN, glm::vec3(0.0f, 0.0f, 1.0f));
 	}
-	/*else if (timestamp_scene >= 1020 && timestamp_scene < 1380)
-	{
-		t = float(timestamp_scene - 600) / 360;
-		ModelViewMatrix = glm::translate(ViewMatrix, glm::vec3(-479.434540 + t * (-435.445557 - (-479.434540))
-			, 733.972229 + t * (-659.739380 - 733.972229), 310 + 40));
-		rotation_angle_tiger_y = ((timestamp_scene - 600) * 10 % 360) * TO_RADIAN;
-		ModelViewMatrix = glm::rotate(ModelViewMatrix, -20 * TO_RADIAN, glm::vec3(0.0f, 0.0f, 1.0f));
-		ModelViewMatrix = glm::rotate(ModelViewMatrix, rotation_angle_tiger_y, glm::vec3(0.0f, 1.0f, 0.0f));
-		ModelViewMatrix = glm::translate(ModelViewMatrix, glm::vec3(0.0f, 0.0f, -40.0f));
-	}*/
-	else
+	else if (timestamp_scene >= 1020 && timestamp_scene < 1380)
 	{
 		tiger_y_turn_flag = 0;
-		ModelViewMatrix = glm::translate(ViewMatrix, glm::vec3(-435.445557, -659.739380, 10));
+		t = float(timestamp_scene - 1020) / 360;
+		ModelViewMatrix = glm::translate(ViewMatrix, glm::vec3(-435.445557 + t * (3436.646240 - (-435.445557))
+			, -659.739380 + t * (-2077.112305 - (- 659.739380)), 10));
+		ModelViewMatrix = glm::rotate(ModelViewMatrix, 65 * TO_RADIAN, glm::vec3(0.0f, 0.0f, 1.0f));
+	}
+	else
+	{
+		ModelViewMatrix = glm::translate(ViewMatrix, glm::vec3(3436.646240, - 2077.112305, 10));
 		ModelViewMatrix = glm::rotate(ModelViewMatrix, 65 * TO_RADIAN, glm::vec3(0.0f, 0.0f, 1.0f));
 	}
 
