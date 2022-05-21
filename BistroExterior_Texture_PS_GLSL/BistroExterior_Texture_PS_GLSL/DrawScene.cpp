@@ -651,10 +651,12 @@ void prepare_objects(void) {
 	glBindVertexArray(0);
 }
 
-int timestamp_scene;
+int timestamp_scene = 500;
+int tiger_y_turn_flag;
 
 void draw_objects(void) {
-	float rotation_angle_tiger = 0.0f;
+	float rotation_angle_tiger_y = 0.0f;
+	float rotation_angle_tiger_z = 0.0f;
 	float turn_angle_tiger = 0.0f;
 	float t;
 	
@@ -664,13 +666,13 @@ void draw_objects(void) {
 	
 	if (timestamp_scene < 90)
 	{
-		rotation_angle_tiger = ((timestamp_scene / 20 - 60) % 360) * TO_RADIAN;
+		rotation_angle_tiger_z = ((timestamp_scene / 20 - 60) % 360) * TO_RADIAN;
 		turn_angle_tiger = (timestamp_scene) % 360 * TO_RADIAN;
 		//회전 중심점
 		ModelViewMatrix = glm::translate(ViewMatrix, glm::vec3(1136.181763, 3716.681641, 10));
 		ModelViewMatrix = glm::rotate(ModelViewMatrix, -turn_angle_tiger, glm::vec3(0.0f, 0.0f, 1.0f));
 		ModelViewMatrix = glm::translate(ModelViewMatrix, glm::vec3(112.321899, 380.919921, 0));
-		ModelViewMatrix = glm::rotate(ModelViewMatrix, -rotation_angle_tiger, glm::vec3(0.0f, 0.0f, 1.0f));
+		ModelViewMatrix = glm::rotate(ModelViewMatrix, -rotation_angle_tiger_z, glm::vec3(0.0f, 0.0f, 1.0f));
 	}
 	else if (timestamp_scene >= 90 && timestamp_scene < 390)
 	{
@@ -686,10 +688,48 @@ void draw_objects(void) {
 			, 1494.852051 + t * (733.972229 - 1494.852051), 10));
 		ModelViewMatrix = glm::rotate(ModelViewMatrix, -36 * TO_RADIAN, glm::vec3(0.0f, 0.0f, 1.0f));
 	}
+	else if (timestamp_scene >= 540 && timestamp_scene < 600)
+	{
+		tiger_y_turn_flag = 1;
+		t = float(timestamp_scene - 540) / 60;
+		ModelViewMatrix = glm::translate(ViewMatrix, glm::vec3(-479.434540
+			, 733.972229 , 10 + t * 300));
+		ModelViewMatrix = glm::rotate(ModelViewMatrix, (-36 + t * 16) * TO_RADIAN, glm::vec3(0.0f, 0.0f, 1.0f));
+	}
+	else if (timestamp_scene >= 600 && timestamp_scene < 960)
+	{
+		tiger_y_turn_flag = 2;
+		t = float(timestamp_scene - 600) / 360;
+		ModelViewMatrix = glm::translate(ViewMatrix, glm::vec3(-479.434540 + t * (-435.445557 - (-479.434540))
+			, 733.972229 + t * (-659.739380 - 733.972229), 310 + 40));
+		rotation_angle_tiger_y = ((timestamp_scene - 600) * 10 % 360) * TO_RADIAN;
+		ModelViewMatrix = glm::rotate(ModelViewMatrix, -20 * TO_RADIAN, glm::vec3(0.0f, 0.0f, 1.0f));
+		ModelViewMatrix = glm::rotate(ModelViewMatrix, rotation_angle_tiger_y, glm::vec3(0.0f, 1.0f, 0.0f));
+		ModelViewMatrix = glm::translate(ModelViewMatrix, glm::vec3(0.0f, 0.0f, -40.0f));
+	}
+	else if (timestamp_scene >= 960 && timestamp_scene < 1020)
+	{
+		tiger_y_turn_flag = 1;
+		t = float(timestamp_scene - 960) / 60;
+		ModelViewMatrix = glm::translate(ViewMatrix, glm::vec3(-435.445557
+			, -659.739380, 310 - t * 300));
+		ModelViewMatrix = glm::rotate(ModelViewMatrix, (-20 + t * 85) * TO_RADIAN, glm::vec3(0.0f, 0.0f, 1.0f));
+	}
+	/*else if (timestamp_scene >= 1020 && timestamp_scene < 1380)
+	{
+		t = float(timestamp_scene - 600) / 360;
+		ModelViewMatrix = glm::translate(ViewMatrix, glm::vec3(-479.434540 + t * (-435.445557 - (-479.434540))
+			, 733.972229 + t * (-659.739380 - 733.972229), 310 + 40));
+		rotation_angle_tiger_y = ((timestamp_scene - 600) * 10 % 360) * TO_RADIAN;
+		ModelViewMatrix = glm::rotate(ModelViewMatrix, -20 * TO_RADIAN, glm::vec3(0.0f, 0.0f, 1.0f));
+		ModelViewMatrix = glm::rotate(ModelViewMatrix, rotation_angle_tiger_y, glm::vec3(0.0f, 1.0f, 0.0f));
+		ModelViewMatrix = glm::translate(ModelViewMatrix, glm::vec3(0.0f, 0.0f, -40.0f));
+	}*/
 	else
 	{
-		ModelViewMatrix = glm::translate(ViewMatrix, glm::vec3(-479.434540, 733.972229, 10));
-		ModelViewMatrix = glm::rotate(ModelViewMatrix, -36 * TO_RADIAN, glm::vec3(0.0f, 0.0f, 1.0f));
+		tiger_y_turn_flag = 0;
+		ModelViewMatrix = glm::translate(ViewMatrix, glm::vec3(-435.445557, -659.739380, 10));
+		ModelViewMatrix = glm::rotate(ModelViewMatrix, 65 * TO_RADIAN, glm::vec3(0.0f, 0.0f, 1.0f));
 	}
 
 	ModelViewProjectionMatrix = ProjectionMatrix * ModelViewMatrix;
@@ -747,7 +787,6 @@ void renew_cam_position(int dir) {
 
 #define CAM_RSPEED 0.1f
 void renew_cam_orientation_rotation_around_v_axis(int angle) {
-	// let's get a help from glm
 	glm::mat3 RotationMatrix;
 	glm::vec3 direction;
 	glm::vec3 uaxis = glm::vec3(current_camera.uaxis[0], current_camera.uaxis[1], current_camera.uaxis[2]);
@@ -765,8 +804,6 @@ void renew_cam_orientation_rotation_around_v_axis(int angle) {
 	current_camera.naxis[0] = direction[0];
 	current_camera.naxis[1] = direction[1];
 	current_camera.naxis[2] = direction[2];
-
-	// TODO: Correct uaxis, vaxis, and naxis so that they continue to be orthonormal!!!
 }
 
 int world_ob_cam;
@@ -945,8 +982,17 @@ void timer_scene(int value) {
 	cur_frame_tiger = timestamp_scene % N_TIGER_FRAMES;
 	glutPostRedisplay();
 	if (stop_flag == 0)
+	{
 		timestamp_scene = (timestamp_scene + 1) % INT_MAX;
-	glutTimerFunc(100, timer_scene, 0);
+
+		if (tiger_y_turn_flag == 1)
+			glutTimerFunc(70, timer_scene, 0);
+		else if (tiger_y_turn_flag == 2)
+			glutTimerFunc(10, timer_scene, 0);
+		else
+			glutTimerFunc(100, timer_scene, 0);
+	}
+	
 }
 
 void cleanup(void) {
