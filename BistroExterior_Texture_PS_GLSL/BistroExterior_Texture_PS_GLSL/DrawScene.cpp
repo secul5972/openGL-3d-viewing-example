@@ -102,14 +102,14 @@ void initialize_camera(void) {
 	pCamera->move = 0;
 	pCamera->fovy = TO_RADIAN * scene.camera.fovy, pCamera->aspect_ratio = scene.camera.aspect, pCamera->near_c = 0.1f; pCamera->far_c = 30000.0f;
 
-	//CAMERA_2 : bistro view
+	//CAMERA_2 : bike view
 	pCamera = &camera_info[CAMERA_2];
-	pCamera->pos[0] = -241.351807f; pCamera->pos[1] = 1444.346313f; pCamera->pos[2] = 283.968231f;
-	pCamera->uaxis[0] = -0.998411f; pCamera->uaxis[1] = 0.049119f; pCamera->uaxis[2] = -0.027553f;
-	pCamera->vaxis[0] = -0.028485f; pCamera->vaxis[1] = -0.018375f; pCamera->vaxis[2] = 0.999417f;
-	pCamera->naxis[0] = 0.048585f; pCamera->naxis[1] = 0.998617f; pCamera->naxis[2] = 0.019746f;
+	pCamera->pos[0] = -1623.476318; pCamera->pos[1] = 692.174133; pCamera->pos[2] = 1053.776855;
+	pCamera->uaxis[0] = 0.750404; pCamera->uaxis[1] = 0.660965; pCamera->uaxis[2] = -0.005153;
+	pCamera->vaxis[0] = -0.311077; pCamera->vaxis[1] = 0.360028; pCamera->vaxis[2] = 0.879542;
+	pCamera->naxis[0] = 0.583203; pCamera->naxis[1] = -0.658410; pCamera->naxis[2] = 0.475780;
 	pCamera->move = 0;
-	pCamera->fovy = TO_RADIAN * scene.camera.fovy, pCamera->aspect_ratio = scene.camera.aspect, pCamera->near_c = 0.1f; pCamera->far_c = 30000.0f;
+	pCamera->fovy = 0.698132, pCamera->aspect_ratio = 1.777778, pCamera->near_c = 0.100000; pCamera->far_c = 30000.0f;
 
 	//CAMERA_3 : tree view
 	pCamera = &camera_info[CAMERA_3];
@@ -704,12 +704,51 @@ void prepare_spider(void) {
 	glBindVertexArray(0);
 }
 
+GLuint bike_VBO, bike_VAO;
+int bike_n_triangles;
+GLfloat* bike_vertices;
+
+void prepare_bike(void) {
+	int i, n_bytes_per_vertex, n_bytes_per_triangle, bike_n_total_triangles = 0;
+	char filename[512];
+
+	n_bytes_per_vertex = 8 * sizeof(float); // 3 for vertex, 3 for normal, and 2 for texcoord
+	n_bytes_per_triangle = 3 * n_bytes_per_vertex;
+
+	sprintf(filename, "Data/bike_vnt.geom");
+	bike_n_triangles = read_geometry(&bike_vertices, n_bytes_per_triangle, filename);
+	// assume all geometry files are effective
+	bike_n_total_triangles += bike_n_triangles;
+
+
+	// initialize vertex buffer object
+	glGenBuffers(1, &bike_VBO);
+
+	glBindBuffer(GL_ARRAY_BUFFER, bike_VBO);
+	glBufferData(GL_ARRAY_BUFFER, bike_n_total_triangles * 3 * n_bytes_per_vertex, bike_vertices, GL_STATIC_DRAW);
+
+	// as the geometry data exists now in graphics memory, ...
+	free(bike_vertices);
+
+	// initialize vertex array object
+	glGenVertexArrays(1, &bike_VAO);
+	glBindVertexArray(bike_VAO);
+
+	glBindBuffer(GL_ARRAY_BUFFER, bike_VBO);
+	glVertexAttribPointer(LOC_VERTEX, 3, GL_FLOAT, GL_FALSE, n_bytes_per_vertex, BUFFER_OFFSET(0));
+	glEnableVertexAttribArray(0);
+
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glBindVertexArray(0);
+}
+
 void prepare_objects(void) {
 	prepare_tiger();
 	prepare_spider();
+	prepare_bike();
 }
 
-int timestamp_scene;
+int timestamp_scene = 1100;
 int tiger_speed_flag;
 
 void draw_tiger(void) {
@@ -718,102 +757,102 @@ void draw_tiger(void) {
 	float rotation_angle_tiger_x = 0.0f;
 	float turn_angle_tiger = 0.0f;
 	float t;
-
+	int nt = timestamp_scene % 2370;
 	glUseProgram(h_ShaderProgram_simple);
 
-	if (timestamp_scene < 90)
+	if (nt < 90)
 	{
-		rotation_angle_tiger_z = ((timestamp_scene / 20 - 60) % 360) * TO_RADIAN;
-		turn_angle_tiger = (timestamp_scene) % 360 * TO_RADIAN;
+		rotation_angle_tiger_z = ((nt / 20 - 60) % 360) * TO_RADIAN;
+		turn_angle_tiger = (nt) % 360 * TO_RADIAN;
 		//회전 중심점
 		ModelViewMatrix = glm::translate(ViewMatrix, glm::vec3(1136.181763, 3716.681641, 10));
 		ModelViewMatrix = glm::rotate(ModelViewMatrix, -turn_angle_tiger, glm::vec3(0.0f, 0.0f, 1.0f));
 		ModelViewMatrix = glm::translate(ModelViewMatrix, glm::vec3(112.321899, 380.919921, 0));
 		ModelViewMatrix = glm::rotate(ModelViewMatrix, -rotation_angle_tiger_z, glm::vec3(0.0f, 0.0f, 1.0f));
 	}
-	else if (timestamp_scene >= 90 && timestamp_scene < 390)
+	else if (nt >= 90 && nt < 390)
 	{
-		t = float(timestamp_scene - 90) / 300;
+		t = float(nt - 90) / 300;
 		ModelViewMatrix = glm::translate(ViewMatrix, glm::vec3(1517.101684 + t * (166.990982 - 1517.101684)
 			, 3604.359742 + t * (1494.852051 - 3604.359742), 10));
 		ModelViewMatrix = glm::rotate(ModelViewMatrix, -35 * TO_RADIAN, glm::vec3(0.0f, 0.0f, 1.0f));
 	}
-	else if (timestamp_scene >= 390 && timestamp_scene < 540)
+	else if (nt >= 390 && nt < 540)
 	{
-		t = float(timestamp_scene - 390) / 150;
+		t = float(nt - 390) / 150;
 		ModelViewMatrix = glm::translate(ViewMatrix, glm::vec3(166.990982 + t * (-479.434540 - 166.990982)
 			, 1494.852051 + t * (733.972229 - 1494.852051), 10));
 		ModelViewMatrix = glm::rotate(ModelViewMatrix, -36 * TO_RADIAN, glm::vec3(0.0f, 0.0f, 1.0f));
 	}
-	else if (timestamp_scene >= 540 && timestamp_scene < 600)
+	else if (nt >= 540 && nt < 600)
 	{
 		tiger_speed_flag = 1;
-		t = float(timestamp_scene - 540) / 60;
+		t = float(nt - 540) / 60;
 		ModelViewMatrix = glm::translate(ViewMatrix, glm::vec3(-479.434540
 			, 733.972229, 10 + t * 300));
 		ModelViewMatrix = glm::rotate(ModelViewMatrix, (-36 + t * 16) * TO_RADIAN, glm::vec3(0.0f, 0.0f, 1.0f));
 	}
-	else if (timestamp_scene >= 600 && timestamp_scene < 960)
+	else if (nt >= 600 && nt < 960)
 	{
 		tiger_speed_flag = 2;
-		t = float(timestamp_scene - 600) / 360;
+		t = float(nt - 600) / 360;
 		ModelViewMatrix = glm::translate(ViewMatrix, glm::vec3(-479.434540 + t * (-435.445557 - (-479.434540))
 			, 733.972229 + t * (-659.739380 - 733.972229), 310 + 40));
-		rotation_angle_tiger_y = ((timestamp_scene - 600) * 10 % 360) * TO_RADIAN;
+		rotation_angle_tiger_y = ((nt - 600) * 10 % 360) * TO_RADIAN;
 		ModelViewMatrix = glm::rotate(ModelViewMatrix, -20 * TO_RADIAN, glm::vec3(0.0f, 0.0f, 1.0f));
 		ModelViewMatrix = glm::rotate(ModelViewMatrix, rotation_angle_tiger_y, glm::vec3(0.0f, 1.0f, 0.0f));
 		ModelViewMatrix = glm::translate(ModelViewMatrix, glm::vec3(0.0f, 0.0f, -40.0f));
 	}
-	else if (timestamp_scene >= 960 && timestamp_scene < 1020)
+	else if (nt >= 960 && nt < 1020)
 	{
 		tiger_speed_flag = 1;
-		t = float(timestamp_scene - 960) / 60;
+		t = float(nt - 960) / 60;
 		ModelViewMatrix = glm::translate(ViewMatrix, glm::vec3(-435.445557
 			, -659.739380, 310 - t * 300));
 		ModelViewMatrix = glm::rotate(ModelViewMatrix, (-20 + t * 85) * TO_RADIAN, glm::vec3(0.0f, 0.0f, 1.0f));
 	}
-	else if (timestamp_scene >= 1020 && timestamp_scene < 1380)
+	else if (nt >= 1020 && nt < 1380)
 	{
 		tiger_speed_flag = 0;
-		t = float(timestamp_scene - 1020) / 360;
+		t = float(nt - 1020) / 360;
 		ModelViewMatrix = glm::translate(ViewMatrix, glm::vec3(-435.445557 + t * (3436.646240 - (-435.445557))
 			, -659.739380 + t * (-2077.112305 - (-659.739380)), 10));
 		ModelViewMatrix = glm::rotate(ModelViewMatrix, 65 * TO_RADIAN, glm::vec3(0.0f, 0.0f, 1.0f));
 	}
-	else if (timestamp_scene >= 1380 && timestamp_scene < 1740)
+	else if (nt >= 1380 && nt < 1740)
 	{
-		t = float(timestamp_scene - 1380) / 360;
+		t = float(nt - 1380) / 360;
 		int z = 0;
 		float t2 = 0;
-		if (timestamp_scene < 1410 || (timestamp_scene >= 1470 && timestamp_scene < 1500)
-			|| (timestamp_scene >= 1560 && timestamp_scene < 1590)
-			|| (timestamp_scene >= 1650 && timestamp_scene < 1680))
+		if (nt < 1410 || (nt >= 1470 && nt < 1500)
+			|| (nt >= 1560 && nt < 1590)
+			|| (nt >= 1650 && nt < 1680))
 		{
-			if (timestamp_scene < 1410)
-				t2 = float(timestamp_scene - 1380);
-			else if (timestamp_scene < 1500)
-				t2 = float(timestamp_scene - 1470);
-			else if (timestamp_scene < 1590)
-				t2 = float(timestamp_scene - 1560);
+			if (nt < 1410)
+				t2 = float(nt - 1380);
+			else if (nt < 1500)
+				t2 = float(nt - 1470);
+			else if (nt < 1590)
+				t2 = float(nt - 1560);
 			else
-				t2 = float(timestamp_scene - 1650);
+				t2 = float(nt - 1650);
 			t2 /= 30;
 			tiger_speed_flag = 3;
 			z = 300 * t2;
 			rotation_angle_tiger_x = -90 * t2;
 		}
-		else if (timestamp_scene < 1470 || (timestamp_scene >= 1500 && timestamp_scene < 1560)
-			|| (timestamp_scene >= 1590 && timestamp_scene < 1650)
-			|| (timestamp_scene >= 1680 && timestamp_scene < 1740))
+		else if (nt < 1470 || (nt >= 1500 && nt < 1560)
+			|| (nt >= 1590 && nt < 1650)
+			|| (nt >= 1680 && nt < 1740))
 		{
-			if (timestamp_scene < 1470)
-				t2 = float(timestamp_scene - 1410);
-			else if (timestamp_scene < 1560)
-				t2 = float(timestamp_scene - 1500);
-			else if (timestamp_scene < 1650)
-				t2 = float(timestamp_scene - 1590);
+			if (nt < 1470)
+				t2 = float(nt - 1410);
+			else if (nt < 1560)
+				t2 = float(nt - 1500);
+			else if (nt < 1650)
+				t2 = float(nt - 1590);
 			else
-				t2 = float(timestamp_scene - 1680);
+				t2 = float(nt - 1680);
 
 			t2 /= 60;
 			tiger_speed_flag = 3;
@@ -827,21 +866,21 @@ void draw_tiger(void) {
 		ModelViewMatrix = glm::rotate(ModelViewMatrix, rotation_angle_tiger_x * TO_RADIAN, glm::vec3(1.0f, 0.0f, 0.0f));
 		ModelViewMatrix = glm::translate(ModelViewMatrix, glm::vec3(0.0f, 200.0f, 0.0f));
 	}
-	else if (timestamp_scene >= 1740 && timestamp_scene < 1830)
+	else if (nt >= 1740 && nt < 1830)
 	{
-		t = float(timestamp_scene - 1740) / 90;
+		t = float(nt - 1740) / 90;
 		int z = 0;
 		float t2 = 0;
-		if (timestamp_scene < 1770)
+		if (nt < 1770)
 		{
-			t2 = float(timestamp_scene - 1740) / 30;
+			t2 = float(nt - 1740) / 30;
 			tiger_speed_flag = 3;
 			z = 300 * t2;
 			rotation_angle_tiger_x = -90 * t2;
 		}
 		else
 		{
-			t2 = float(timestamp_scene - 1770) / 60;
+			t2 = float(nt - 1770) / 60;
 			tiger_speed_flag = 3;
 			z = 300 - 300 * t2;
 			rotation_angle_tiger_x = 270 + -270 * t2;
@@ -853,11 +892,11 @@ void draw_tiger(void) {
 		ModelViewMatrix = glm::rotate(ModelViewMatrix, rotation_angle_tiger_x * TO_RADIAN, glm::vec3(1.0f, 0.0f, 0.0f));
 		ModelViewMatrix = glm::translate(ModelViewMatrix, glm::vec3(0.0f, 200.0f, 0.0f));
 	}
-	else if (timestamp_scene >= 1830 && timestamp_scene < 2190)
+	else if (nt >= 1830 && nt < 2190)
 	{
 		tiger_speed_flag = 0;
-		t = float(timestamp_scene - 1830) / 360;
-		rotation_angle_tiger_y = (timestamp_scene - 1830) * 10 % 360;
+		t = float(nt - 1830) / 360;
+		rotation_angle_tiger_y = (nt - 1830) * 10 % 360;
 		ModelViewMatrix = glm::translate(ViewMatrix, glm::vec3(-529.608704 + t * (1457.488281 - (-529.608704))
 			, 617.851379 + t * (3484.590820 - (617.851379)), 10));
 		ModelViewMatrix = glm::rotate(ModelViewMatrix, 85 * TO_RADIAN, glm::vec3(0.0f, 0.0f, 1.0f));
@@ -865,17 +904,17 @@ void draw_tiger(void) {
 		ModelViewMatrix = glm::rotate(ModelViewMatrix, rotation_angle_tiger_y * TO_RADIAN, glm::vec3(0.0f, 1.0f, 0.0f));
 		ModelViewMatrix = glm::translate(ModelViewMatrix, glm::vec3(0.0f, 0.0, -50.0f));
 	}
-	else if (timestamp_scene >= 2190 && timestamp_scene < 2220)
+	else if (nt >= 2190 && nt < 2220)
 	{
-		t = float(timestamp_scene - 2190) / 30;
+		t = float(nt - 2190) / 30;
 		ModelViewMatrix = glm::translate(ViewMatrix, glm::vec3(1457.488281 + t * (1517.101684 - 1457.488281)
 			, 3484.590820 + t * (3604.359742 - 3484.590820), 10));
 		ModelViewMatrix = glm::rotate(ModelViewMatrix, (85 + t * 60) * TO_RADIAN, glm::vec3(0.0f, 0.0f, 1.0f));
 	}
-	else if (timestamp_scene >= 2220 && timestamp_scene < 2310)
+	else if (nt >= 2220 && nt < 2310)
 	{
-		rotation_angle_tiger_z = (((timestamp_scene - 2220) / 20 + 145) % 360) * TO_RADIAN;
-		turn_angle_tiger = (timestamp_scene - 2220) % 360 * TO_RADIAN;
+		rotation_angle_tiger_z = (((nt - 2220) / 20 + 145) % 360) * TO_RADIAN;
+		turn_angle_tiger = (nt - 2220) % 360 * TO_RADIAN;
 		//회전 중심점
 		ModelViewMatrix = glm::translate(ViewMatrix, glm::vec3(1136.181763, 3716.681641, 10));
 		ModelViewMatrix = glm::rotate(ModelViewMatrix, turn_angle_tiger, glm::vec3(0.0f, 0.0f, 1.0f));
@@ -884,7 +923,7 @@ void draw_tiger(void) {
 	}
 	else
 	{
-		t = float(timestamp_scene - 2310) / 60;
+		t = float(nt - 2310) / 60;
 		ModelViewMatrix = glm::translate(ViewMatrix, glm::vec3(1248.503662, 4097.601562, 10));
 		ModelViewMatrix = glm::rotate(ModelViewMatrix, (239 + t * 181) * TO_RADIAN, glm::vec3(0.0f, 0.0f, 1.0f));
 	}
@@ -904,9 +943,79 @@ void draw_tiger(void) {
 
 void draw_spider()
 {
+	float t = 0;
+	int nt = timestamp_scene % 1800;
 	glUseProgram(h_ShaderProgram_simple);
-	ModelViewMatrix = glm::translate(ViewMatrix, glm::vec3(1257.583862, 3575.761719, 384.865356));
-	ModelViewMatrix = glm::scale(ModelViewMatrix, glm::vec3(50.0f, -50.0f, 50.0f));
+	if (nt < 360)
+	{
+		tiger_speed_flag = 0;
+		t = float(nt) / 360;
+		ModelViewMatrix = glm::translate(ViewMatrix, glm::vec3(-2236.867432 + t * (-2933.899902 - (-2236.867432))
+			, 902.053711 + t *(1648.135254 - 902.053711), 750.927368));
+			ModelViewMatrix = glm::scale(ModelViewMatrix, glm::vec3(50.0f, -70.0f, 40.0f));
+
+		ModelViewMatrix = glm::rotate(ModelViewMatrix, 50 * TO_RADIAN, glm::vec3(0.0f, 0.0f, 1.0f));
+		ModelViewMatrix = glm::rotate(ModelViewMatrix, -90 * TO_RADIAN, glm::vec3(0.0f, 1.0f, 0.0f));
+	}
+	else if (nt >= 360 && nt < 720)
+	{
+		tiger_speed_flag = 0;
+		t = float(nt - 360) / 360;
+		
+		ModelViewMatrix = glm::translate(ViewMatrix, glm::vec3(-2933.899902 + t * (-2631.692627 - (-2933.899902))
+			, 1648.135254 + t * (2139.930908 - 1648.135254), 750.927368));
+		ModelViewMatrix = glm::scale(ModelViewMatrix, glm::vec3(50.0f, -70.0f, 40.0f));
+		ModelViewMatrix = glm::rotate(ModelViewMatrix, 90 * TO_RADIAN, glm::vec3(0.0f, 0.0f, 1.0f));
+		ModelViewMatrix = glm::rotate(ModelViewMatrix, -90 * TO_RADIAN, glm::vec3(0.0f, 1.0f, 0.0f));
+	}
+	else if (nt >= 720 && nt < 1080)
+	{
+		tiger_speed_flag = 0;
+		t = float(nt - 720) / 360;
+
+		ModelViewMatrix = glm::translate(ViewMatrix, glm::vec3(-2631.692627 + t * (-2048.920654 - (-2631.692627))
+			, 2139.930908 + t * (2784.766602 - 2139.930908), 750.927368));
+		ModelViewMatrix = glm::scale(ModelViewMatrix, glm::vec3(50.0f, -70.0f, 40.0f));
+
+		ModelViewMatrix = glm::rotate(ModelViewMatrix, 130 * TO_RADIAN, glm::vec3(0.0f, 0.0f, 1.0f));
+		ModelViewMatrix = glm::rotate(ModelViewMatrix, -90 * TO_RADIAN, glm::vec3(0.0f, 1.0f, 0.0f));
+	}
+	else if (nt >= 1080 && nt < 1260)
+	{
+		tiger_speed_flag = 2;
+		t = float(nt - 1080) / 180;
+		ModelViewMatrix = glm::translate(ViewMatrix, glm::vec3(-2048.920654 + t * (-1085.127930 - (-2048.920654))
+			, 2784.766602 + t * (2408.333496 - 2784.766602), 750.927368));
+		ModelViewMatrix = glm::scale(ModelViewMatrix, glm::vec3(50.0f, -70.0f, 40.0f));
+
+		ModelViewMatrix = glm::rotate(ModelViewMatrix, (130 + 180 * t) * TO_RADIAN, glm::vec3(0.0f, 0.0f, 1.0f));
+		ModelViewMatrix = glm::rotate(ModelViewMatrix, -90 * TO_RADIAN, glm::vec3(0.0f, 1.0f, 0.0f));
+	}
+	else if (nt >= 1260 && nt < 1620)
+	{
+		tiger_speed_flag = 0;
+		t = float(nt - 1260) / 360;
+
+		ModelViewMatrix = glm::translate(ViewMatrix, glm::vec3(-1085.127930 + t * (-1816.343994 - (-1085.127930))
+			, 2408.333496 + t * (1607.495605 - 2408.333496), 750.927368));
+		ModelViewMatrix = glm::scale(ModelViewMatrix, glm::vec3(50.0f, -70.0f, 40.0f));
+
+		ModelViewMatrix = glm::rotate(ModelViewMatrix, 310 * TO_RADIAN, glm::vec3(0.0f, 0.0f, 1.0f));
+		ModelViewMatrix = glm::rotate(ModelViewMatrix, -90 * TO_RADIAN, glm::vec3(0.0f, 1.0f, 0.0f));
+	}
+	else
+	{
+		tiger_speed_flag = 2;
+		t = float(nt - 1620) / 180;
+
+		ModelViewMatrix = glm::translate(ViewMatrix, glm::vec3(-1816.343994 + t * (-2236.867432 - (-1816.343994))
+			, 1607.495605 + t * (902.053711 - 1607.495605), 750.927368));
+		ModelViewMatrix = glm::scale(ModelViewMatrix, glm::vec3(50.0f, -70.0f, 40.0f));
+
+		ModelViewMatrix = glm::rotate(ModelViewMatrix, (310 + 100 * t) * TO_RADIAN, glm::vec3(0.0f, 0.0f, 1.0f));
+		ModelViewMatrix = glm::rotate(ModelViewMatrix, -90 * TO_RADIAN, glm::vec3(0.0f, 1.0f, 0.0f));
+	}
+
 	ModelViewProjectionMatrix = ProjectionMatrix * ModelViewMatrix;
 
 	glUniformMatrix4fv(loc_ModelViewProjectionMatrix, 1, GL_FALSE, &ModelViewProjectionMatrix[0][0]);
@@ -917,11 +1026,31 @@ void draw_spider()
 	glBindVertexArray(0);
 	glUseProgram(0);
 }
+
+void draw_bike(void) {
+	glUseProgram(h_ShaderProgram_simple);
+
+	ModelViewMatrix = glm::translate(ViewMatrix, glm::vec3(-2531.891846, 1773.687622, 20));
+	ModelViewMatrix = glm::scale(ModelViewMatrix, glm::vec3(100.0f, 100.0f, 100.0f));
+	ModelViewMatrix = glm::rotate(ModelViewMatrix, 90 * TO_RADIAN, glm::vec3(1.0f, 0.0f, 0.0f));
+	ModelViewProjectionMatrix = ProjectionMatrix * ModelViewMatrix;
+
+	glUniformMatrix4fv(loc_ModelViewProjectionMatrix, 1, GL_FALSE, &ModelViewProjectionMatrix[0][0]);
+	glUniform3f(loc_primitive_color, 1.0f, 0.0f, 1.0f); // Tiger wireframe color = magenta
+
+
+	glBindVertexArray(bike_VAO);
+	glDrawArrays(GL_TRIANGLES, 0, 3 * bike_n_triangles);
+	glBindVertexArray(0);
+	glUseProgram(0);
+}
+
 void draw_objects()
 {
-	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 	draw_tiger();
 	draw_spider();
+	draw_bike();
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 }
 /*****************************  END: geometry setup *****************************/
@@ -997,7 +1126,11 @@ void move_camera(int direction_num)
 	renew_cam_position(direction_num);
 	set_ViewMatrix_from_camera_frame();
 	ViewProjectionMatrix = ProjectionMatrix * ViewMatrix;
-	printf("%f %f %f\n", current_camera.pos[0], current_camera.pos[1], current_camera.pos[2]);
+	printf("pos:%f %f %f\n", current_camera.pos[0], current_camera.pos[1], current_camera.pos[2]);
+	printf("uaxis:%f %f %f\n", current_camera.uaxis[0], current_camera.uaxis[1], current_camera.uaxis[2]);
+	printf("vaxis:%f %f %f\n", current_camera.vaxis[0], current_camera.vaxis[1], current_camera.vaxis[2]);
+	printf("naxis:%f %f %f\n", current_camera.naxis[0], current_camera.naxis[1], current_camera.naxis[2]);
+	printf("val:%f %f %f %f %d %d\n", current_camera.fovy, current_camera.aspect_ratio, current_camera.near_c, current_camera.far_c, current_camera.move, current_camera.rotation_axis);
 	glutPostRedisplay();
 }
 
@@ -1166,7 +1299,6 @@ void timer_scene(int value) {
 	if (stop_flag == 0)
 	{
 		timestamp_scene = (timestamp_scene + 1) % INT_MAX;
-		timestamp_scene %= 2370;
 		if (tiger_speed_flag == 1)
 			glutTimerFunc(70, timer_scene, 0);
 		else if (tiger_speed_flag == 2)
