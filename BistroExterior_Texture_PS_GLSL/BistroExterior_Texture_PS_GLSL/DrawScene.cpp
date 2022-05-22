@@ -606,7 +606,7 @@ int read_geometry(GLfloat** object, int bytes_per_primitive, char* filename) {
 	return n_triangles;
 }
 
-void prepare_objects(void) {
+void prepare_tiger(void) {
 	int i, n_bytes_per_vertex, n_bytes_per_triangle, tiger_n_total_triangles = 0;
 	char filename[512];
 
@@ -651,17 +651,19 @@ void prepare_objects(void) {
 	glBindVertexArray(0);
 }
 
-int timestamp_scene = 2150;
+void prepare_objects(void) {
+	prepare_tiger();
+}
+
+int timestamp_scene;
 int tiger_speed_flag;
 
-void draw_objects(void) {
+void draw_tiger(void) {
 	float rotation_angle_tiger_y = 0.0f;
 	float rotation_angle_tiger_z = 0.0f;
 	float rotation_angle_tiger_x = 0.0f;
 	float turn_angle_tiger = 0.0f;
 	float t;
-
-	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
 	glUseProgram(h_ShaderProgram_simple);
 
@@ -843,6 +845,12 @@ void draw_objects(void) {
 	glDrawArrays(GL_TRIANGLES, tiger_vertex_offset[cur_frame_tiger], 3 * tiger_n_triangles[cur_frame_tiger]);
 	glBindVertexArray(0);
 	glUseProgram(0);
+	
+}
+void draw_objects()
+{
+	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+	draw_tiger();
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 }
 /*****************************  END: geometry setup *****************************/
