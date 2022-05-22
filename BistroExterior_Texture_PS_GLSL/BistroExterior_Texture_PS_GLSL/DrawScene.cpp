@@ -651,7 +651,7 @@ void prepare_objects(void) {
 	glBindVertexArray(0);
 }
 
-int timestamp_scene = 1700;
+int timestamp_scene = 2150;
 int tiger_speed_flag;
 
 void draw_objects(void) {
@@ -809,11 +809,28 @@ void draw_objects(void) {
 		ModelViewMatrix = glm::rotate(ModelViewMatrix, rotation_angle_tiger_y * TO_RADIAN, glm::vec3(0.0f, 1.0f, 0.0f));
 		ModelViewMatrix = glm::translate(ModelViewMatrix, glm::vec3(0.0f, 0.0, -50.0f));
 	}
+	else if (timestamp_scene >= 2190 && timestamp_scene < 2220)
+	{
+		t = float(timestamp_scene - 2190) / 30;
+		ModelViewMatrix = glm::translate(ViewMatrix, glm::vec3(1457.488281 + t * (1517.101684 - 1457.488281)
+			, 3484.590820 + t * (3604.359742 - 3484.590820), 10));
+		ModelViewMatrix = glm::rotate(ModelViewMatrix, (85 + t * 60) * TO_RADIAN, glm::vec3(0.0f, 0.0f, 1.0f));
+	}
+	else if (timestamp_scene >= 2220 && timestamp_scene < 2310)
+	{
+		rotation_angle_tiger_z = (((timestamp_scene - 2220) / 20 + 145) % 360) * TO_RADIAN;
+		turn_angle_tiger = (timestamp_scene - 2220) % 360 * TO_RADIAN;
+		//회전 중심점
+		ModelViewMatrix = glm::translate(ViewMatrix, glm::vec3(1136.181763, 3716.681641, 10));
+		ModelViewMatrix = glm::rotate(ModelViewMatrix, turn_angle_tiger, glm::vec3(0.0f, 0.0f, 1.0f));
+		ModelViewMatrix = glm::translate(ModelViewMatrix, glm::vec3(380.919921, -112.321899, 0));
+		ModelViewMatrix = glm::rotate(ModelViewMatrix, rotation_angle_tiger_z, glm::vec3(0.0f, 0.0f, 1.0f));
+	}
 	else
 	{
-		tiger_speed_flag = 0;
-		ModelViewMatrix = glm::translate(ViewMatrix, glm::vec3(1457.488281, 3484.590820, 10));
-		ModelViewMatrix = glm::rotate(ModelViewMatrix, 65 * TO_RADIAN, glm::vec3(0.0f, 0.0f, 1.0f));
+		t = float(timestamp_scene - 2310) / 60;
+		ModelViewMatrix = glm::translate(ViewMatrix, glm::vec3(1248.503662, 4097.601562, 10));
+		ModelViewMatrix = glm::rotate(ModelViewMatrix, (239 + t * 181) * TO_RADIAN, glm::vec3(0.0f, 0.0f, 1.0f));
 	}
 
 
@@ -1069,7 +1086,7 @@ void timer_scene(int value) {
 	if (stop_flag == 0)
 	{
 		timestamp_scene = (timestamp_scene + 1) % INT_MAX;
-
+		timestamp_scene %= 2370;
 		if (tiger_speed_flag == 1)
 			glutTimerFunc(70, timer_scene, 0);
 		else if (tiger_speed_flag == 2)
@@ -1077,7 +1094,7 @@ void timer_scene(int value) {
 		else if (tiger_speed_flag == 3)
 			glutTimerFunc(30, timer_scene, 0);
 		else
-			glutTimerFunc(100, timer_scene, 0);
+			glutTimerFunc(80, timer_scene, 0);
 	}
 
 }
