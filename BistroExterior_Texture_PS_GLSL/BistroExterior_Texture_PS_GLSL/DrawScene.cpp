@@ -50,12 +50,10 @@ glm::mat3 ModelViewMatrixInvTrans;
 
 /*********************************  START: camera *********************************/
 typedef enum {
+	CAMERA_0,
 	CAMERA_1,
 	CAMERA_2,
 	CAMERA_3,
-	CAMERA_4,
-	CAMERA_5,
-	CAMERA_6,
 	NUM_CAMERAS
 } CAMERA_INDEX;
 
@@ -89,18 +87,25 @@ void set_current_camera(int camera_num) {
 }
 
 void initialize_camera(void) {
-	//CAMERA_1 : original view
-	Camera* pCamera = &camera_info[CAMERA_1];
-	for (int k = 0; k < 3; k++)
-	{
-		pCamera->pos[k] = scene.camera.e[k];
-		pCamera->uaxis[k] = scene.camera.u[k];
-		pCamera->vaxis[k] = scene.camera.v[k];
-		pCamera->naxis[k] = scene.camera.n[k];
-	}
+	Camera* pCamera;
 
+	//CAMERA_0 : tank view
+	pCamera = &camera_info[CAMERA_0];
+	pCamera->pos[0] = 1698.044189; pCamera->pos[1] = 4226.301758; pCamera->pos[2] = 1073.223999;
+	pCamera->uaxis[0] = -0.947783; pCamera->uaxis[1] = 0.318916; pCamera->uaxis[2] = 0.000000;
+	pCamera->vaxis[0] = -0.082445; pCamera->vaxis[1] = -0.245019; pCamera->vaxis[2] = 0.966009;
+	pCamera->naxis[0] = 0.308075; pCamera->naxis[1] = 0.915569; pCamera->naxis[2] = 0.258517;
 	pCamera->move = 0;
-	pCamera->fovy = TO_RADIAN * scene.camera.fovy, pCamera->aspect_ratio = scene.camera.aspect, pCamera->near_c = 0.1f; pCamera->far_c = 30000.0f;
+	pCamera->fovy = 0.698132, pCamera->aspect_ratio = 1.777778, pCamera->near_c = 0.1f; pCamera->far_c = 30000.0f;
+
+	//CAMERA_1 : ironman view
+	pCamera = &camera_info[CAMERA_1];
+	pCamera->pos[0] = -975.329895; pCamera->pos[1] = -304.546387; pCamera->pos[2] = 309.933868;
+	pCamera->uaxis[0] = -0.446822; pCamera->uaxis[1] = -0.893904; pCamera->uaxis[2] = 0.035884;
+	pCamera->vaxis[0] = 0.024694; pCamera->vaxis[1] = 0.027772; pCamera->vaxis[2] = 0.999309;
+	pCamera->naxis[0] = -0.894283; pCamera->naxis[1] = 0.447400; pCamera->naxis[2] = 0.009665;
+	pCamera->move = 0;
+	pCamera->fovy = 0.698132, pCamera->aspect_ratio = 1.777778, pCamera->near_c = 0.1f; pCamera->far_c = 30000.0f;
 
 	//CAMERA_2 : bike view
 	pCamera = &camera_info[CAMERA_2];
@@ -120,34 +125,7 @@ void initialize_camera(void) {
 	pCamera->move = 0;
 	pCamera->fovy = 0.698132, pCamera->aspect_ratio = 1.777778, pCamera->near_c = 0.1f; pCamera->far_c = 30000.0f;
 
-	//CAMERA_4 : top view
-	pCamera = &camera_info[CAMERA_4];
-	pCamera->pos[0] = 0.0f; pCamera->pos[1] = 0.0f; pCamera->pos[2] = 18300.0f;
-	pCamera->uaxis[0] = 1.0f; pCamera->uaxis[1] = 0.0f; pCamera->uaxis[2] = 0.0f;
-	pCamera->vaxis[0] = 0.0f; pCamera->vaxis[1] = 1.0f; pCamera->vaxis[2] = 0.0f;
-	pCamera->naxis[0] = 0.0f; pCamera->naxis[1] = 0.0f; pCamera->naxis[2] = 1.0f;
-	pCamera->move = 0;
-	pCamera->fovy = TO_RADIAN * scene.camera.fovy, pCamera->aspect_ratio = scene.camera.aspect, pCamera->near_c = 0.1f; pCamera->far_c = 30000.0f;
-
-	//CAMERA_5 : front view
-	pCamera = &camera_info[CAMERA_5];
-	pCamera->pos[0] = 0.0f; pCamera->pos[1] = 11700.0f; pCamera->pos[2] = 0.0f;
-	pCamera->uaxis[0] = 1.0f; pCamera->uaxis[1] = 0.0f; pCamera->uaxis[2] = 0.0f;
-	pCamera->vaxis[0] = 0.0f; pCamera->vaxis[1] = 0.0f; pCamera->vaxis[2] = 1.0f;
-	pCamera->naxis[0] = 0.0f; pCamera->naxis[1] = 1.0f; pCamera->naxis[2] = 0.0f;
-	pCamera->move = 0;
-	pCamera->fovy = TO_RADIAN * scene.camera.fovy, pCamera->aspect_ratio = scene.camera.aspect, pCamera->near_c = 0.1f; pCamera->far_c = 30000.0f;
-
-	//CAMERA_6 : side view
-	pCamera = &camera_info[CAMERA_6];
-	pCamera->pos[0] = 14600.0f; pCamera->pos[1] = 0.0f; pCamera->pos[2] = 0.0f;
-	pCamera->uaxis[0] = 0.0f; pCamera->uaxis[1] = 1.0f; pCamera->uaxis[2] = 0.0f;
-	pCamera->vaxis[0] = 0.0f; pCamera->vaxis[1] = 0.0f; pCamera->vaxis[2] = 1.0f;
-	pCamera->naxis[0] = 1.0f; pCamera->naxis[1] = 0.0f; pCamera->naxis[2] = 0.0f;
-	pCamera->move = 0;
-	pCamera->fovy = TO_RADIAN * scene.camera.fovy, pCamera->aspect_ratio = scene.camera.aspect, pCamera->near_c = 0.1f; pCamera->far_c = 30000.0f;
-
-	set_current_camera(CAMERA_1);
+	set_current_camera(CAMERA_0);
 }
 /*********************************  END: camera *********************************/
 
@@ -742,13 +720,169 @@ void prepare_bike(void) {
 	glBindVertexArray(0);
 }
 
+GLuint bus_VBO, bus_VAO;
+int bus_n_triangles;
+GLfloat* bus_vertices;
+
+void prepare_bus(void) {
+	int i, n_bytes_per_vertex, n_bytes_per_triangle, bus_n_total_triangles = 0;
+	char filename[512];
+
+	n_bytes_per_vertex = 8 * sizeof(float); // 3 for vertex, 3 for normal, and 2 for texcoord
+	n_bytes_per_triangle = 3 * n_bytes_per_vertex;
+
+	sprintf(filename, "Data/bus_vnt.geom");
+	bus_n_triangles = read_geometry(&bus_vertices, n_bytes_per_triangle, filename);
+	// assume all geometry files are effective
+	bus_n_total_triangles += bus_n_triangles;
+
+
+	// initialize vertex buffer object
+	glGenBuffers(1, &bus_VBO);
+
+	glBindBuffer(GL_ARRAY_BUFFER, bus_VBO);
+	glBufferData(GL_ARRAY_BUFFER, bus_n_total_triangles * 3 * n_bytes_per_vertex, bus_vertices, GL_STATIC_DRAW);
+
+	// as the geometry data exists now in graphics memory, ...
+	free(bus_vertices);
+
+	// initialize vertex array object
+	glGenVertexArrays(1, &bus_VAO);
+	glBindVertexArray(bus_VAO);
+
+	glBindBuffer(GL_ARRAY_BUFFER, bus_VBO);
+	glVertexAttribPointer(LOC_VERTEX, 3, GL_FLOAT, GL_FALSE, n_bytes_per_vertex, BUFFER_OFFSET(0));
+	glEnableVertexAttribArray(0);
+
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glBindVertexArray(0);
+}
+
+GLuint cow_VBO, cow_VAO;
+int cow_n_triangles;
+GLfloat* cow_vertices;
+
+void prepare_cow(void) {
+	int i, n_bytes_per_vertex, n_bytes_per_triangle, cow_n_total_triangles = 0;
+	char filename[512];
+
+	n_bytes_per_vertex = 8 * sizeof(float); // 3 for vertex, 3 for normal, and 2 for texcoord
+	n_bytes_per_triangle = 3 * n_bytes_per_vertex;
+
+	sprintf(filename, "Data/cow_vn.geom");
+	cow_n_triangles = read_geometry(&cow_vertices, n_bytes_per_triangle, filename);
+	// assume all geometry files are effective
+	cow_n_total_triangles += cow_n_triangles;
+
+
+	// initialize vertex buffer object
+	glGenBuffers(1, &cow_VBO);
+
+	glBindBuffer(GL_ARRAY_BUFFER, cow_VBO);
+	glBufferData(GL_ARRAY_BUFFER, cow_n_total_triangles * 3 * n_bytes_per_vertex, cow_vertices, GL_STATIC_DRAW);
+
+	// as the geometry data exists now in graphics memory, ...
+	free(cow_vertices);
+
+	// initialize vertex array object
+	glGenVertexArrays(1, &cow_VAO);
+	glBindVertexArray(cow_VAO);
+
+	glBindBuffer(GL_ARRAY_BUFFER, cow_VBO);
+	glVertexAttribPointer(LOC_VERTEX, 3, GL_FLOAT, GL_FALSE, n_bytes_per_vertex, BUFFER_OFFSET(0));
+	glEnableVertexAttribArray(0);
+
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glBindVertexArray(0);
+}
+
+GLuint ironman_VBO, ironman_VAO;
+int ironman_n_triangles;
+GLfloat* ironman_vertices;
+
+void prepare_ironman(void) {
+	int i, n_bytes_per_vertex, n_bytes_per_triangle, ironman_n_total_triangles = 0;
+	char filename[512];
+
+	n_bytes_per_vertex = 8 * sizeof(float); // 3 for vertex, 3 for normal, and 2 for texcoord
+	n_bytes_per_triangle = 3 * n_bytes_per_vertex;
+
+	sprintf(filename, "Data/ironman_vnt.geom");
+	ironman_n_triangles = read_geometry(&ironman_vertices, n_bytes_per_triangle, filename);
+	// assume all geometry files are effective
+	ironman_n_total_triangles += ironman_n_triangles;
+
+
+	// initialize vertex buffer object
+	glGenBuffers(1, &ironman_VBO);
+
+	glBindBuffer(GL_ARRAY_BUFFER, ironman_VBO);
+	glBufferData(GL_ARRAY_BUFFER, ironman_n_total_triangles * 3 * n_bytes_per_vertex, ironman_vertices, GL_STATIC_DRAW);
+
+	// as the geometry data exists now in graphics memory, ...
+	free(ironman_vertices);
+
+	// initialize vertex array object
+	glGenVertexArrays(1, &ironman_VAO);
+	glBindVertexArray(ironman_VAO);
+
+	glBindBuffer(GL_ARRAY_BUFFER, ironman_VBO);
+	glVertexAttribPointer(LOC_VERTEX, 3, GL_FLOAT, GL_FALSE, n_bytes_per_vertex, BUFFER_OFFSET(0));
+	glEnableVertexAttribArray(0);
+
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glBindVertexArray(0);
+}
+
+GLuint tank_VBO, tank_VAO;
+int tank_n_triangles;
+GLfloat* tank_vertices;
+
+void prepare_tank(void) {
+	int i, n_bytes_per_vertex, n_bytes_per_triangle, tank_n_total_triangles = 0;
+	char filename[512];
+
+	n_bytes_per_vertex = 8 * sizeof(float); // 3 for vertex, 3 for normal, and 2 for texcoord
+	n_bytes_per_triangle = 3 * n_bytes_per_vertex;
+
+	sprintf(filename, "Data/tank_vnt.geom");
+	tank_n_triangles = read_geometry(&tank_vertices, n_bytes_per_triangle, filename);
+	// assume all geometry files are effective
+	tank_n_total_triangles += tank_n_triangles;
+
+
+	// initialize vertex buffer object
+	glGenBuffers(1, &tank_VBO);
+
+	glBindBuffer(GL_ARRAY_BUFFER, tank_VBO);
+	glBufferData(GL_ARRAY_BUFFER, tank_n_total_triangles * 3 * n_bytes_per_vertex, tank_vertices, GL_STATIC_DRAW);
+
+	// as the geometry data exists now in graphics memory, ...
+	free(tank_vertices);
+
+	// initialize vertex array object
+	glGenVertexArrays(1, &tank_VAO);
+	glBindVertexArray(tank_VAO);
+
+	glBindBuffer(GL_ARRAY_BUFFER, tank_VBO);
+	glVertexAttribPointer(LOC_VERTEX, 3, GL_FLOAT, GL_FALSE, n_bytes_per_vertex, BUFFER_OFFSET(0));
+	glEnableVertexAttribArray(0);
+
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glBindVertexArray(0);
+}
+
 void prepare_objects(void) {
 	prepare_tiger();
 	prepare_spider();
 	prepare_bike();
+	prepare_bus();
+	prepare_cow();
+	prepare_ironman();
+	prepare_tank();
 }
 
-int timestamp_scene = 1100;
+int timestamp_scene;
 int tiger_speed_flag;
 
 void draw_tiger(void) {
@@ -1036,8 +1170,7 @@ void draw_bike(void) {
 	ModelViewProjectionMatrix = ProjectionMatrix * ModelViewMatrix;
 
 	glUniformMatrix4fv(loc_ModelViewProjectionMatrix, 1, GL_FALSE, &ModelViewProjectionMatrix[0][0]);
-	glUniform3f(loc_primitive_color, 1.0f, 0.0f, 1.0f); // Tiger wireframe color = magenta
-
+	glUniform3f(loc_primitive_color, 1.0f, 0.0f, 1.0f);
 
 	glBindVertexArray(bike_VAO);
 	glDrawArrays(GL_TRIANGLES, 0, 3 * bike_n_triangles);
@@ -1045,12 +1178,99 @@ void draw_bike(void) {
 	glUseProgram(0);
 }
 
+void draw_bus(void) {
+	glUseProgram(h_ShaderProgram_simple);
+
+	ModelViewMatrix = glm::translate(ViewMatrix, glm::vec3(5275.063965, - 1588.633179, 10));
+	ModelViewMatrix = glm::scale(ModelViewMatrix, glm::vec3(60.0f, 80.0f, 60.0f));
+	ModelViewMatrix = glm::rotate(ModelViewMatrix, 70 * TO_RADIAN, glm::vec3(0.0f, 0.0f, 1.0f));
+	ModelViewMatrix = glm::rotate(ModelViewMatrix, 90 * TO_RADIAN, glm::vec3(1.0f, 0.0f, 0.0f));
+	ModelViewProjectionMatrix = ProjectionMatrix * ModelViewMatrix;
+
+	glUniformMatrix4fv(loc_ModelViewProjectionMatrix, 1, GL_FALSE, &ModelViewProjectionMatrix[0][0]);
+	glUniform3f(loc_primitive_color, 1.0f, 0.0f, 1.0f);
+
+	glBindVertexArray(bus_VAO);
+	glDrawArrays(GL_TRIANGLES, 0, 3 * bus_n_triangles);
+	glBindVertexArray(0);
+
+	glUseProgram(h_ShaderProgram_simple);
+
+	ModelViewMatrix = glm::translate(ViewMatrix, glm::vec3(5275.063965, -1588.633179, 410));
+	ModelViewMatrix = glm::scale(ModelViewMatrix, glm::vec3(30.0f, 20.0f, 20.0f));
+	ModelViewMatrix = glm::rotate(ModelViewMatrix, 180 * TO_RADIAN, glm::vec3(0.0f, 0.0f, 1.0f));
+	ModelViewMatrix = glm::rotate(ModelViewMatrix, 90 * TO_RADIAN, glm::vec3(1.0f, 0.0f, 0.0f));
+	ModelViewProjectionMatrix = ProjectionMatrix * ModelViewMatrix;
+
+	glUniformMatrix4fv(loc_ModelViewProjectionMatrix, 1, GL_FALSE, &ModelViewProjectionMatrix[0][0]);
+	glUniform3f(loc_primitive_color, 1.0f, 0.0f, 1.0f);
+
+	glBindVertexArray(bus_VAO);
+	glDrawArrays(GL_TRIANGLES, 0, 3 * bus_n_triangles);
+	glBindVertexArray(0);
+}
+
+void draw_cow(void) {
+	glUseProgram(h_ShaderProgram_simple);
+
+	ModelViewMatrix = glm::translate(ViewMatrix, glm::vec3(3566.815918, -1864.608521, 480.433838));
+	ModelViewMatrix = glm::scale(ModelViewMatrix, glm::vec3(100.0f, 80.0f, 130.0f));
+	ModelViewMatrix = glm::rotate(ModelViewMatrix, 145 * TO_RADIAN, glm::vec3(0.0f, 1.0f, 1.0f));
+	ModelViewMatrix = glm::rotate(ModelViewMatrix, 90 * TO_RADIAN, glm::vec3(1.0f, 0.0f, 0.0f));
+	ModelViewProjectionMatrix = ProjectionMatrix * ModelViewMatrix;
+
+	glUniformMatrix4fv(loc_ModelViewProjectionMatrix, 1, GL_FALSE, &ModelViewProjectionMatrix[0][0]);
+	glUniform3f(loc_primitive_color, 1.0f, 0.0f, 1.0f);
+
+	glBindVertexArray(cow_VAO);
+	glDrawArrays(GL_TRIANGLES, 0, 3 * cow_n_triangles);
+	glBindVertexArray(0);
+}
+
+void draw_ironman(void) {
+	glUseProgram(h_ShaderProgram_simple);
+
+	ModelViewMatrix = glm::translate(ViewMatrix, glm::vec3(92.381546, -319.062866, 290.257141));
+	ModelViewMatrix = glm::scale(ModelViewMatrix, glm::vec3(100.0f, 80.0f, 46.0f));
+	ModelViewMatrix = glm::rotate(ModelViewMatrix, 90 * TO_RADIAN, glm::vec3(1.0f, 0.0f, 0.0f));
+	ModelViewProjectionMatrix = ProjectionMatrix * ModelViewMatrix;
+
+	glUniformMatrix4fv(loc_ModelViewProjectionMatrix, 1, GL_FALSE, &ModelViewProjectionMatrix[0][0]);
+	glUniform3f(loc_primitive_color, 1.0f, 0.0f, 1.0f);
+
+	glBindVertexArray(ironman_VAO);
+	glDrawArrays(GL_TRIANGLES, 0, 3 * ironman_n_triangles);
+	glBindVertexArray(0);
+}
+
+
+void draw_tank(void) {
+	glUseProgram(h_ShaderProgram_simple);
+
+	ModelViewMatrix = glm::translate(ViewMatrix, glm::vec3(733.943237, 2301.803467, 710.973450));
+	ModelViewMatrix = glm::scale(ModelViewMatrix, glm::vec3(100.0f, 80.0f, 46.0f));
+	ModelViewMatrix = glm::rotate(ModelViewMatrix, 56 * TO_RADIAN, glm::vec3(1.0f, 1.0f, 0.0f));
+	ModelViewProjectionMatrix = ProjectionMatrix * ModelViewMatrix;
+
+	glUniformMatrix4fv(loc_ModelViewProjectionMatrix, 1, GL_FALSE, &ModelViewProjectionMatrix[0][0]);
+	glUniform3f(loc_primitive_color, 1.0f, 0.0f, 1.0f);
+
+
+	glBindVertexArray(tank_VAO);
+	glDrawArrays(GL_TRIANGLES, 0, 3 * tank_n_triangles);
+	glBindVertexArray(0);
+}
+
 void draw_objects()
 {
-	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 	draw_tiger();
 	draw_spider();
 	draw_bike();
+	draw_bus();
+	draw_cow();
+	draw_ironman();
+	draw_tank();
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 }
 /*****************************  END: geometry setup *****************************/
@@ -1065,7 +1285,6 @@ void display(void) {
 	draw_objects();
 
 	glutSwapBuffers();
-
 }
 
 #define CAM_TSPEED 10.0f
@@ -1203,6 +1422,10 @@ void keyboard(unsigned char key, int x, int y) {
 		b_draw_grid = b_draw_grid ? false : true;
 		glutPostRedisplay();
 		break;
+	case '0':
+		set_current_camera(CAMERA_0);
+		glutPostRedisplay();
+		break;
 	case '1':
 		set_current_camera(CAMERA_1);
 		glutPostRedisplay();
@@ -1215,23 +1438,11 @@ void keyboard(unsigned char key, int x, int y) {
 		set_current_camera(CAMERA_3);
 		glutPostRedisplay();
 		break;
-	case '4':
-		set_current_camera(CAMERA_4);
-		glutPostRedisplay();
-		break;
-	case '5':
-		set_current_camera(CAMERA_5);
-		glutPostRedisplay();
-		break;
-	case '6':
-		set_current_camera(CAMERA_6);
-		glutPostRedisplay();
-		break;
 	case 27: // ESC key
 		glutLeaveMainLoop(); // Incur destuction callback for cleanups.
 		break;
 	case 'm':
-		world_ob_cam = ~world_ob_cam;
+		world_ob_cam = !world_ob_cam;
 		break;
 	case 'w':
 		move_camera(0);
@@ -1261,9 +1472,8 @@ void keyboard(unsigned char key, int x, int y) {
 		rotate_camera(2);
 		break;
 	case 'r':
-		stop_flag = ~stop_flag;
+		stop_flag = !stop_flag;
 		break;
-
 	}
 }
 
@@ -1305,10 +1515,8 @@ void timer_scene(int value) {
 			glutTimerFunc(10, timer_scene, 0);
 		else if (tiger_speed_flag == 3)
 			glutTimerFunc(30, timer_scene, 0);
-		else
-			glutTimerFunc(80, timer_scene, 0);
 	}
-
+	glutTimerFunc(80, timer_scene, 0);
 }
 
 void cleanup(void) {
