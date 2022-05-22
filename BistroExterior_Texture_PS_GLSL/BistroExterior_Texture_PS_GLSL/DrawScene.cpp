@@ -37,6 +37,7 @@ GLint loc_flag_fog;
 // include glm/*.hpp only if necessary
 // #include <glm/glm.hpp> 
 #include <glm/gtc/matrix_transform.hpp> //translate, rotate, scale, lookAt, perspective, etc.
+#include <glm/gtc/matrix_inverse.hpp> 
 // ViewProjectionMatrix = ProjectionMatrix * ViewMatrix
 glm::mat4 ViewProjectionMatrix, ViewMatrix, ProjectionMatrix;
 // ModelViewProjectionMatrix = ProjectionMatrix * ViewMatrix * ModelMatrix
@@ -574,6 +575,8 @@ void draw_bistro_exterior(void) {
 // TO DO
 
 #define LOC_VERTEX 0
+#define LOC_NORMAL 1
+#define LOC_TEXCOORD 2
 #define N_TIGER_FRAMES 12
 
 GLuint tiger_VBO, tiger_VAO;
@@ -581,6 +584,7 @@ int tiger_n_triangles[N_TIGER_FRAMES];
 int tiger_vertex_offset[N_TIGER_FRAMES];
 GLfloat* tiger_vertices[N_TIGER_FRAMES];
 int cur_frame_tiger = 0;
+int cur_frame_spider = 0;
 
 int read_geometry(GLfloat** object, int bytes_per_primitive, char* filename) {
 	int n_triangles;
@@ -651,8 +655,141 @@ void prepare_tiger(void) {
 	glBindVertexArray(0);
 }
 
+#define N_SPIDER_FRAMES 16
+GLuint spider_VBO, spider_VAO;
+int spider_n_triangles[N_SPIDER_FRAMES];
+int spider_vertex_offset[N_SPIDER_FRAMES];
+GLfloat* spider_vertices[N_SPIDER_FRAMES];
+
+#define N_TEXTURES_USED 2
+#define TEXTURE_ID_FLOOR 0
+#define TEXTURE_ID_TIGER 1
+GLuint texture_names[N_TEXTURES_USED];
+
+void My_glTexImage2D_from_file(const char* filename) {
+	FREE_IMAGE_FORMAT tx_file_format;
+	int tx_bits_per_pixel;
+	FIBITMAP* tx_pixmap, * tx_pixmap_32;
+
+	int width, height;
+	GLvoid* data;
+
+	tx_file_format = FreeImage_GetFileType(filename, 0);
+	// assume everything is fine with reading texture from file: no error checking
+	tx_pixmap = FreeImage_Load(tx_file_format, filename);
+	tx_bits_per_pixel = FreeImage_GetBPP(tx_pixmap);
+
+	fprintf(stdout, " * A %d-bit texture was read from %s.\n", tx_bits_per_pixel, filename);
+	if (tx_bits_per_pixel == 32)
+		tx_pixmap_32 = tx_pixmap;
+	else {
+		fprintf(stdout, " * Converting texture from %d bits to 32 bits...\n", tx_bits_per_pixel);
+		tx_pixmap_32 = FreeImage_ConvertTo32Bits(tx_pixmap);
+	}
+
+	width = FreeImage_GetWidth(tx_pixmap_32);
+	height = FreeImage_GetHeight(tx_pixmap_32);
+	data = FreeImage_GetBits(tx_pixmap_32);
+
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_BGRA, GL_UNSIGNED_BYTE, data);
+	fprintf(stdout, " * Loaded %dx%d RGBA texture into graphics memory.\n\n", width, height);
+
+	FreeImage_Unload(tx_pixmap_32);
+	if (tx_bits_per_pixel != 32)
+		FreeImage_Unload(tx_pixmap);
+}
+
+Material_Parameters material_tiger;
+
+void prepare_spider(void) {
+	int i, n_bytes_per_vertex, n_bytes_per_triangle, spider_n_total_triangles = 0;
+	char filename[512];
+
+	n_bytes_per_vertex = 8 * sizeof(float); // 3 for vertex, 3 for normal, and 2 for texcoord
+	n_bytes_per_triangle = 3 * n_bytes_per_vertex;
+
+	for (i = 0; i < N_SPIDER_FRAMES; i++) {
+		sprintf(filename, "Data/spider_vnt_%d%d.geom", i / 10, i % 10);
+		spider_n_triangles[i] = read_geometry(&spider_vertices[i], n_bytes_per_triangle, filename);
+		// assume all geometry files are effective
+		spider_n_total_triangles += spider_n_triangles[i];
+
+		if (i == 0)
+			spider_vertex_offset[i] = 0;
+		else
+			spider_vertex_offset[i] = spider_vertex_offset[i - 1] + 3 * spider_n_triangles[i - 1];
+	}
+
+	// initialize vertex buffer object
+	glGenBuffers(1, &spider_VBO);
+
+	glBindBuffer(GL_ARRAY_BUFFER, spider_VBO);
+	glBufferData(GL_ARRAY_BUFFER, spider_n_total_triangles * n_bytes_per_triangle, NULL, GL_STATIC_DRAW);
+
+	for (i = 0; i < N_SPIDER_FRAMES; i++)
+		glBufferSubData(GL_ARRAY_BUFFER, spider_vertex_offset[i] * n_bytes_per_vertex,
+			spider_n_triangles[i] * n_bytes_per_triangle, spider_vertices[i]);
+
+	// as the geometry data exists now in graphics memory, ...
+	for (i = 0; i < N_SPIDER_FRAMES; i++)
+		free(spider_vertices[i]);
+
+	// initialize vertex array object
+	glGenVertexArrays(1, &spider_VAO);
+	glBindVertexArray(spider_VAO);
+
+	glBindBuffer(GL_ARRAY_BUFFER, spider_VBO);
+	glVertexAttribPointer(LOC_VERTEX, 3, GL_FLOAT, GL_FALSE, n_bytes_per_vertex, BUFFER_OFFSET(0));
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(LOC_NORMAL, 3, GL_FLOAT, GL_FALSE, n_bytes_per_vertex, BUFFER_OFFSET(3 * sizeof(float)));
+	glEnableVertexAttribArray(1);
+	glVertexAttribPointer(LOC_TEXCOORD, 2, GL_FLOAT, GL_FALSE, n_bytes_per_vertex, BUFFER_OFFSET(6 * sizeof(float)));
+	glEnableVertexAttribArray(2);
+
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glBindVertexArray(0);
+
+	material_tiger.ambient_color[0] = 0.24725f;
+	material_tiger.ambient_color[1] = 0.1995f;
+	material_tiger.ambient_color[2] = 0.0745f;
+	material_tiger.ambient_color[3] = 1.0f;
+
+	material_tiger.diffuse_color[0] = 0.75164f;
+	material_tiger.diffuse_color[1] = 0.60648f;
+	material_tiger.diffuse_color[2] = 0.22648f;
+	material_tiger.diffuse_color[3] = 1.0f;
+
+	material_tiger.specular_color[0] = 0.728281f;
+	material_tiger.specular_color[1] = 0.655802f;
+	material_tiger.specular_color[2] = 0.466065f;
+	material_tiger.specular_color[3] = 1.0f;
+
+	material_tiger.specular_exponent = 51.2f;
+
+	material_tiger.emissive_color[0] = 0.1f;
+	material_tiger.emissive_color[1] = 0.1f;
+	material_tiger.emissive_color[2] = 0.0f;
+	material_tiger.emissive_color[3] = 1.0f;
+
+	glHint(GL_GENERATE_MIPMAP_HINT, GL_NICEST);
+
+	glActiveTexture(GL_TEXTURE0 + TEXTURE_ID_TIGER);
+	glBindTexture(GL_TEXTURE_2D, texture_names[TEXTURE_ID_TIGER]);
+
+	My_glTexImage2D_from_file("Data/dynamic_objects/tiger/tiger_tex2.jpg");
+
+	glGenerateMipmap(GL_TEXTURE_2D);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+}
+
 void prepare_objects(void) {
 	prepare_tiger();
+	prepare_spider();
 }
 
 int timestamp_scene;
@@ -847,10 +984,41 @@ void draw_tiger(void) {
 	glUseProgram(0);
 	
 }
+
+void set_material_tiger(void) {
+	// assume ShaderProgram_TXPS is used
+	glUniform4fv(loc_material.ambient_color, 1, material_tiger.ambient_color);
+	glUniform4fv(loc_material.diffuse_color, 1, material_tiger.diffuse_color);
+	glUniform4fv(loc_material.specular_color, 1, material_tiger.specular_color);
+	glUniform1f(loc_material.specular_exponent, material_tiger.specular_exponent);
+	glUniform4fv(loc_material.emissive_color, 1, material_tiger.emissive_color);
+}
+
+void draw_spider()
+{
+	glUseProgram(h_ShaderProgram_TXPS);
+	/*set_material_tiger();
+	glUniform1i(loc_texture, TEXTURE_ID_TIGER);*/
+	ModelViewMatrix = glm::translate(ViewMatrix, glm::vec3(1257.583862, 3575.761719, 384.865356));
+	ModelViewMatrix = glm::scale(ModelViewMatrix, glm::vec3(50.0f, -50.0f, 50.0f));
+	ModelViewProjectionMatrix = ProjectionMatrix * ModelViewMatrix;
+	ModelViewMatrixInvTrans = glm::inverseTranspose(glm::mat3(ModelViewMatrix));
+
+	glUniformMatrix4fv(loc_ModelViewProjectionMatrix_TXPS, 1, GL_FALSE, &ModelViewProjectionMatrix[0][0]);
+	glUniformMatrix4fv(loc_ModelViewMatrix_TXPS, 1, GL_FALSE, &ModelViewMatrix[0][0]);
+	glUniformMatrix3fv(loc_ModelViewMatrixInvTrans_TXPS, 1, GL_FALSE, &ModelViewMatrixInvTrans[0][0]);
+	//glFrontFace(GL_CW);
+
+	glBindVertexArray(spider_VAO);
+	glDrawArrays(GL_TRIANGLES, spider_vertex_offset[cur_frame_spider], 3 * spider_n_triangles[cur_frame_spider]);
+	glBindVertexArray(0);
+	glUseProgram(0);
+}
 void draw_objects()
 {
 	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 	draw_tiger();
+	draw_spider();
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 }
 /*****************************  END: geometry setup *****************************/
@@ -1090,6 +1258,7 @@ void reshape(int width, int height) {
 
 void timer_scene(int value) {
 	cur_frame_tiger = timestamp_scene % N_TIGER_FRAMES;
+	cur_frame_spider = timestamp_scene % N_SPIDER_FRAMES;
 	glutPostRedisplay();
 	if (stop_flag == 0)
 	{
