@@ -113,12 +113,12 @@ void initialize_camera(void) {
 
 	//CAMERA_3 : tree view
 	pCamera = &camera_info[CAMERA_3];
-	pCamera->pos[0] = 1974.856567f; pCamera->pos[1] = -1588.545776f; pCamera->pos[2] = 98.843971f;
-	pCamera->uaxis[0] = -0.357811f; pCamera->uaxis[1] = -0.933725f; pCamera->uaxis[2] = 0.010082f;
-	pCamera->vaxis[0] = -0.180880f; pCamera->vaxis[1] = 0.079899f; pCamera->vaxis[2] = 0.980231f;
-	pCamera->naxis[0] = -0.916095f; pCamera->naxis[1] = 0.348920f; pCamera->naxis[2] = -0.197483f;
+	pCamera->pos[0] = 4010.615479; pCamera->pos[1] = -666.143188; pCamera->pos[2] = 978.349915;
+	pCamera->uaxis[0] = -0.957236; pCamera->uaxis[1] = -0.287192; pCamera->uaxis[2] = 0.034577;
+	pCamera->vaxis[0] = 0.140261; pCamera->vaxis[1] = -0.356284; pCamera->vaxis[2] = 0.923766;
+	pCamera->naxis[0] = -0.252989; pCamera->naxis[1] = 0.889130; pCamera->naxis[2] = 0.381342;
 	pCamera->move = 0;
-	pCamera->fovy = TO_RADIAN * scene.camera.fovy, pCamera->aspect_ratio = scene.camera.aspect, pCamera->near_c = 0.1f; pCamera->far_c = 30000.0f;
+	pCamera->fovy = 0.698132, pCamera->aspect_ratio = 1.777778, pCamera->near_c = 0.1f; pCamera->far_c = 30000.0f;
 
 	//CAMERA_4 : top view
 	pCamera = &camera_info[CAMERA_4];
