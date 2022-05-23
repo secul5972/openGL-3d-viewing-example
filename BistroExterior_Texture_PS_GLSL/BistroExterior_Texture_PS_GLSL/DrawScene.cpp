@@ -1507,7 +1507,6 @@ void display(void) {
 	draw_axes();
 	draw_bistro_exterior();
 
-
 	glutSwapBuffers();
 }
 
@@ -1590,7 +1589,7 @@ void mouse(int button, int state, int x, int y) {
 
 void rotate_camera(int axis)
 {
-	if (camera_mod > CAMERA_m)
+	if (camera_mod != CAMERA_m)
 		return;
 
 	glm::mat4 axis_rotate;
