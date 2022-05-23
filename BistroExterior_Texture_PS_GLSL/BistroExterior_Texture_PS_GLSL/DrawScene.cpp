@@ -872,6 +872,57 @@ void prepare_tank(void) {
 	glBindVertexArray(0);
 }
 
+#define N_WOLF_FRAMES 17
+GLuint wolf_VBO, wolf_VAO;
+int wolf_n_triangles[N_WOLF_FRAMES];
+int wolf_vertex_offset[N_WOLF_FRAMES];
+GLfloat* wolf_vertices[N_WOLF_FRAMES];
+
+void prepare_wolf(void) {
+	int i, n_bytes_per_vertex, n_bytes_per_triangle, wolf_n_total_triangles = 0;
+	char filename[512];
+
+	n_bytes_per_vertex = 8 * sizeof(float); // 3 for vertex, 3 for normal, and 2 for texcoord
+	n_bytes_per_triangle = 3 * n_bytes_per_vertex;
+
+	for (i = 0; i < N_WOLF_FRAMES; i++) {
+		sprintf(filename, "Data/wolf_%02d_vnt.geom", i);
+		wolf_n_triangles[i] = read_geometry(&wolf_vertices[i], n_bytes_per_triangle, filename);
+		// assume all geometry files are effective
+		wolf_n_total_triangles += wolf_n_triangles[i];
+
+		if (i == 0)
+			wolf_vertex_offset[i] = 0;
+		else
+			wolf_vertex_offset[i] = wolf_vertex_offset[i - 1] + 3 * wolf_n_triangles[i - 1];
+	}
+
+	// initialize vertex buffer object
+	glGenBuffers(1, &wolf_VBO);
+
+	glBindBuffer(GL_ARRAY_BUFFER, wolf_VBO);
+	glBufferData(GL_ARRAY_BUFFER, wolf_n_total_triangles * n_bytes_per_triangle, NULL, GL_STATIC_DRAW);
+
+	for (i = 0; i < N_WOLF_FRAMES; i++)
+		glBufferSubData(GL_ARRAY_BUFFER, wolf_vertex_offset[i] * n_bytes_per_vertex,
+			wolf_n_triangles[i] * n_bytes_per_triangle, wolf_vertices[i]);
+
+	// as the geometry data exists now in graphics memory, ...
+	for (i = 0; i < N_WOLF_FRAMES; i++)
+		free(wolf_vertices[i]);
+
+	// initialize vertex array object
+	glGenVertexArrays(1, &wolf_VAO);
+	glBindVertexArray(wolf_VAO);
+
+	glBindBuffer(GL_ARRAY_BUFFER, wolf_VBO);
+	glVertexAttribPointer(LOC_VERTEX, 3, GL_FLOAT, GL_FALSE, n_bytes_per_vertex, BUFFER_OFFSET(0));
+	glEnableVertexAttribArray(0);
+
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glBindVertexArray(0);
+}
+
 void prepare_objects(void) {
 	prepare_tiger();
 	prepare_spider();
@@ -880,6 +931,7 @@ void prepare_objects(void) {
 	prepare_cow();
 	prepare_ironman();
 	prepare_tank();
+	prepare_wolf();
 }
 
 int timestamp_scene_tiger;
@@ -920,7 +972,7 @@ void draw_tiger(void) {
 	}
 	else if (nt >= 540 && nt < 600)
 	{
-		tiger_speed_flag = 1;
+		//tiger_speed_flag = 1;
 		t = float(nt - 540) / 60;
 		ModelViewMatrix = glm::translate(ViewMatrix, glm::vec3(-479.434540
 			, 733.972229, 10 + t * 300));
@@ -928,7 +980,7 @@ void draw_tiger(void) {
 	}
 	else if (nt >= 600 && nt < 960)
 	{
-		tiger_speed_flag = 2;
+		//tiger_speed_flag = 2;
 		t = float(nt - 600) / 360;
 		ModelViewMatrix = glm::translate(ViewMatrix, glm::vec3(-479.434540 + t * (-435.445557 - (-479.434540))
 			, 733.972229 + t * (-659.739380 - 733.972229), 310 + 40));
@@ -939,7 +991,7 @@ void draw_tiger(void) {
 	}
 	else if (nt >= 960 && nt < 1020)
 	{
-		tiger_speed_flag = 1;
+		//tiger_speed_flag = 1;
 		t = float(nt - 960) / 60;
 		ModelViewMatrix = glm::translate(ViewMatrix, glm::vec3(-435.445557
 			, -659.739380, 310 - t * 300));
@@ -947,7 +999,7 @@ void draw_tiger(void) {
 	}
 	else if (nt >= 1020 && nt < 1380)
 	{
-		tiger_speed_flag = 0;
+		//tiger_speed_flag = 0;
 		t = float(nt - 1020) / 360;
 		ModelViewMatrix = glm::translate(ViewMatrix, glm::vec3(-435.445557 + t * (3436.646240 - (-435.445557))
 			, -659.739380 + t * (-2077.112305 - (-659.739380)), 10));
@@ -971,7 +1023,7 @@ void draw_tiger(void) {
 			else
 				t2 = float(nt - 1650);
 			t2 /= 30;
-			tiger_speed_flag = 3;
+			//tiger_speed_flag = 3;
 			z = 300 * t2;
 			rotation_angle_tiger_x = -90 * t2;
 		}
@@ -989,7 +1041,7 @@ void draw_tiger(void) {
 				t2 = float(nt - 1680);
 
 			t2 /= 60;
-			tiger_speed_flag = 3;
+			//tiger_speed_flag = 3;
 			z = 300 - 300 * t2;
 			rotation_angle_tiger_x = 270 + -270 * t2;
 		}
@@ -1008,14 +1060,14 @@ void draw_tiger(void) {
 		if (nt < 1770)
 		{
 			t2 = float(nt - 1740) / 30;
-			tiger_speed_flag = 3;
+			//tiger_speed_flag = 3;
 			z = 300 * t2;
 			rotation_angle_tiger_x = -90 * t2;
 		}
 		else
 		{
 			t2 = float(nt - 1770) / 60;
-			tiger_speed_flag = 3;
+			//tiger_speed_flag = 3;
 			z = 300 - 300 * t2;
 			rotation_angle_tiger_x = 270 + -270 * t2;
 		}
@@ -1028,7 +1080,7 @@ void draw_tiger(void) {
 	}
 	else if (nt >= 1830 && nt < 2190)
 	{
-		tiger_speed_flag = 0;
+		//tiger_speed_flag = 0;
 		t = float(nt - 1830) / 360;
 		rotation_angle_tiger_y = (nt - 1830) * 10 % 360;
 		ModelViewMatrix = glm::translate(ViewMatrix, glm::vec3(-529.608704 + t * (1457.488281 - (-529.608704))
@@ -1084,7 +1136,7 @@ void draw_spider()
 	glUseProgram(h_ShaderProgram_simple);
 	if (nt < 360)
 	{
-		tiger_speed_flag = 0;
+		//tiger_speed_flag = 0;
 		t = float(nt) / 360;
 		ModelViewMatrix = glm::translate(ViewMatrix, glm::vec3(-2236.867432 + t * (-2933.899902 - (-2236.867432))
 			, 902.053711 + t *(1648.135254 - 902.053711), 750.927368));
@@ -1106,7 +1158,7 @@ void draw_spider()
 	}
 	else if (nt >= 720 && nt < 1080)
 	{
-		tiger_speed_flag = 0;
+		//tiger_speed_flag = 0;
 		t = float(nt - 720) / 360;
 
 		ModelViewMatrix = glm::translate(ViewMatrix, glm::vec3(-2631.692627 + t * (-2048.920654 - (-2631.692627))
@@ -1118,7 +1170,7 @@ void draw_spider()
 	}
 	else if (nt >= 1080 && nt < 1260)
 	{
-		tiger_speed_flag = 2;
+		//tiger_speed_flag = 2;
 		t = float(nt - 1080) / 180;
 		ModelViewMatrix = glm::translate(ViewMatrix, glm::vec3(-2048.920654 + t * (-1085.127930 - (-2048.920654))
 			, 2784.766602 + t * (2408.333496 - 2784.766602), 750.927368));
@@ -1129,7 +1181,7 @@ void draw_spider()
 	}
 	else if (nt >= 1260 && nt < 1620)
 	{
-		tiger_speed_flag = 0;
+		//tiger_speed_flag = 0;
 		t = float(nt - 1260) / 360;
 
 		ModelViewMatrix = glm::translate(ViewMatrix, glm::vec3(-1085.127930 + t * (-1816.343994 - (-1085.127930))
@@ -1141,7 +1193,7 @@ void draw_spider()
 	}
 	else
 	{
-		tiger_speed_flag = 2;
+		//tiger_speed_flag = 2;
 		t = float(nt - 1620) / 180;
 
 		ModelViewMatrix = glm::translate(ViewMatrix, glm::vec3(-1816.343994 + t * (-2236.867432 - (-1816.343994))
@@ -1263,6 +1315,41 @@ void draw_tank(void) {
 	glBindVertexArray(0);
 }
 
+int cur_frame_wolf;
+
+void draw_wolf(void) {
+	glUseProgram(h_ShaderProgram_simple);
+	int nt = timestamp_scene_moving_object % 180;
+	float t = float(nt * 2) / 360;
+	float t2 = float(nt % 45) / 45;
+	int z;
+	if (nt < 45 || (nt >= 90 && nt < 135))
+		z = t2 * 200;
+	else
+		z = 200 - t2 * 200;
+	ModelViewMatrix = glm::translate(ViewMatrix, glm::vec3(4484.260742, -2479.470459, 10 + z));
+	ModelViewMatrix = glm::rotate(ModelViewMatrix, -t * 360 * TO_RADIAN, glm::vec3(0.0f, 0.0f, 1.0f));
+	ModelViewMatrix = glm::translate(ModelViewMatrix, glm::vec3(-195.305176, +798.099731, 0));
+	ModelViewMatrix = glm::scale(ModelViewMatrix, glm::vec3(400.0f, 400.0f, 400.0f));
+	ModelViewMatrix = glm::rotate(ModelViewMatrix, 90 * TO_RADIAN, glm::vec3(1.0f, 0.0f, 0.0f));
+	ModelViewMatrix = glm::rotate(ModelViewMatrix, 80 * TO_RADIAN, glm::vec3(0.0f, 1.0f, 0.0f));
+	if (nt < 45 || (nt >= 90 && nt < 135))
+	{
+		ModelViewMatrix = glm::translate(ModelViewMatrix, glm::vec3(0.0f, 0.0f, 5.0f));
+		ModelViewMatrix = glm::rotate(ModelViewMatrix, t2 * 360 * TO_RADIAN, glm::vec3(0.0f, 0.0f, 1.0f));
+		ModelViewMatrix = glm::translate(ModelViewMatrix, glm::vec3(0.0f, 0.0f, -5.0f));
+	}
+	ModelViewProjectionMatrix = ProjectionMatrix * ModelViewMatrix;
+	
+	glUniformMatrix4fv(loc_ModelViewProjectionMatrix, 1, GL_FALSE, &ModelViewProjectionMatrix[0][0]);
+	glUniform3f(loc_primitive_color, 1.0f, 0.0f, 1.0f);
+
+	glBindVertexArray(wolf_VAO);
+	glDrawArrays(GL_TRIANGLES, wolf_vertex_offset[cur_frame_wolf], 3 * wolf_n_triangles[cur_frame_wolf]);
+	glBindVertexArray(0);
+	glUseProgram(0);
+}
+
 void draw_objects()
 {
 	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
@@ -1273,6 +1360,7 @@ void draw_objects()
 	draw_cow();
 	draw_ironman();
 	draw_tank();
+	draw_wolf();
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 }
 /*****************************  END: geometry setup *****************************/
@@ -1507,6 +1595,7 @@ void reshape(int width, int height) {
 void timer_scene(int value) {
 	cur_frame_tiger = timestamp_scene_tiger % N_TIGER_FRAMES;
 	cur_frame_spider = timestamp_scene_moving_object % N_SPIDER_FRAMES;
+	cur_frame_wolf = timestamp_scene_moving_object % N_WOLF_FRAMES;
 	glutPostRedisplay();
 	timestamp_scene_moving_object = (timestamp_scene_moving_object + 1) % INT_MAX;
 	if (stop_flag == 0)
