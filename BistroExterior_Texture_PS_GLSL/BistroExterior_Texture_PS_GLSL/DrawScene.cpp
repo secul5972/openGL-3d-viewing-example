@@ -55,6 +55,8 @@ typedef enum {
 	CAMERA_2,
 	CAMERA_3,
 	CAMERA_m,
+	CAMERA_t,
+	CAMERA_g,
 	NUM_CAMERAS
 } CAMERA_INDEX;
 
@@ -946,7 +948,8 @@ void prepare_objects(void) {
 	prepare_wolf();
 }
 
-int timestamp_scene_tiger;
+int timestamp_scene_tiger = 1650;
+;
 int tiger_eye_flag;
 int tiger_shake_head_flag;
 glm::mat4 ModelMatrix;
@@ -957,7 +960,7 @@ void set_tiger_eye(void)
 {
 	glm::vec4 tiger_eye = ModelMatrix * glm::vec4(0.0f, -88.0f, 62.0f, 1.0f);
 	glm::vec4 zero = ModelMatrix * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
-	glm::vec4 uaxis = ModelMatrix * glm::vec4(1.0f, 0.0f, 0.0f, 1.0f) - zero;
+	glm::vec4 uaxis = ModelMatrix * glm::vec4(-1.0f, 0.0f, 0.0f, 1.0f) - zero;
 	glm::vec4 vaxis = ModelMatrix * glm::vec4(0.0f, 0.0f, 1.0f, 1.0f) - zero;
 	glm::vec4 naxis = ModelMatrix * glm::vec4(0.0f, 1.0f, 0.0f, 1.0f) - zero;
 
@@ -980,6 +983,81 @@ void set_tiger_eye(void)
 		current_camera.naxis[0] = new_naxis[0];	current_camera.naxis[1] = new_naxis[1];	current_camera.naxis[2] = new_naxis[2];
 		printf("%d\n", tiger_shake_head_flag);
 	}*/
+	set_ViewMatrix_from_camera_frame();
+
+	ProjectionMatrix = glm::perspective(current_camera.fovy, current_camera.aspect_ratio, current_camera.near_c, current_camera.far_c);
+	ViewProjectionMatrix = ProjectionMatrix * ViewMatrix;
+}
+
+void set_tiger_watch(void)
+{
+	int nt = timestamp_scene_tiger % 2370;
+
+	glm::vec4 camera_pos;
+	glm::vec4 zero;
+	glm::vec4 uaxis;
+	glm::vec4 vaxis;
+	glm::vec4 naxis;
+	glm::mat4 tmpmat;
+
+	float nlength;
+	float t;
+
+	if (nt >= 600 && nt < 960)
+	{
+		t = float(nt - 600) / 360;
+		tmpmat = glm::translate(glm::mat4(1.0f), glm::vec3(-479.434540 + t * (-435.445557 - (-479.434540))
+			, 733.972229 + t * (-659.739380 - 733.972229), 310));
+		tmpmat = glm::rotate(tmpmat, -20 * TO_RADIAN, glm::vec3(0.0f, 0.0f, 1.0f));
+		camera_pos = tmpmat * glm::vec4(0.0f, 300.0f, 100.0f, 1.0f);
+	}
+	else if (nt >= 1380 && nt < 1740)
+	{
+		t = float(nt - 1380) / 360;
+		tmpmat = glm::translate(glm::mat4(1.0f), glm::vec3(3436.646240 + t * (-104.064941 - (3436.646240))
+			, -2077.112305 + t * (-801.719910 - (-2077.112305)), 10));
+		tmpmat = glm::rotate(tmpmat, 245 * TO_RADIAN, glm::vec3(0.0f, 0.0f, 1.0f));
+		camera_pos = tmpmat * glm::vec4(0.0f, 800.0f, 150.0f, 1.0f);
+	}
+	else if (nt >= 1740 && nt < 1830)
+	{
+		t = float(nt - 1740) / 90;
+		tmpmat = glm::translate(glm::mat4(1.0f), glm::vec3(-104.064941 + t * (-529.608704 - (-104.064941))
+			, -801.719910 + t * (617.851379 - (-801.719910)), 10));
+		tmpmat = glm::rotate(tmpmat, (155) * TO_RADIAN, glm::vec3(0.0f, 0.0f, 1.0f));
+		camera_pos = tmpmat * glm::vec4(0.0f, 500.0f, 100.0f, 1.0f);
+	}
+	else if (nt >= 1830 && nt < 2190)
+	{
+		t = float(nt - 1830) / 360;
+		tmpmat = glm::translate(glm::mat4(1.0f), glm::vec3(-529.608704 + t * (1457.488281 - (-529.608704))
+			, 617.851379 + t * (3484.590820 - (617.851379)), 10));
+		tmpmat = glm::rotate(tmpmat, 155 * TO_RADIAN, glm::vec3(0.0f, 0.0f, 1.0f));
+		camera_pos = tmpmat * glm::vec4(0.0f, 500.0f, 100.0f, 1.0f);
+	}
+	else
+	{
+		tmpmat = ModelMatrix;
+		camera_pos = tmpmat * glm::vec4(0.0f, 300.0f, 100.0f, 1.0f);
+	}
+
+
+	zero = tmpmat * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
+	uaxis;
+	vaxis = glm::vec4(0.0f, 0.0f, 1.0f, 1.0f);
+	naxis = tmpmat * glm::vec4(0.0f, 1.0f, 0.0f, 1.0f) - zero;
+
+	uaxis = glm::vec4(vaxis.y * naxis.z - vaxis.z * naxis.y
+		, vaxis.z * naxis.x - vaxis.x * naxis.z, vaxis.x * naxis.y - vaxis.y * naxis.x, 1.0f);
+	nlength = sqrt(uaxis.x * uaxis.x + uaxis.y * uaxis.y + uaxis.z * uaxis.z);
+
+	uaxis /= nlength;
+
+	current_camera.pos[0] = camera_pos.x; current_camera.pos[1] = camera_pos.y; current_camera.pos[2] = camera_pos.z;
+	current_camera.uaxis[0] = uaxis.x; current_camera.uaxis[1] = uaxis.y; current_camera.uaxis[2] = uaxis.z;
+	current_camera.vaxis[0] = vaxis.x; current_camera.vaxis[1] = vaxis.y; current_camera.vaxis[2] = vaxis.z;
+	current_camera.naxis[0] = naxis.x; current_camera.naxis[1] = naxis.y; current_camera.naxis[2] = naxis.z;
+
 	set_ViewMatrix_from_camera_frame();
 
 	ProjectionMatrix = glm::perspective(current_camera.fovy, current_camera.aspect_ratio, current_camera.near_c, current_camera.far_c);
@@ -1167,8 +1245,10 @@ void draw_tiger(void) {
 		ModelMatrix = glm::translate(ModelMatrix, glm::vec3(1248.503662, 4097.601562, 10));
 		ModelMatrix = glm::rotate(ModelMatrix, (239 + t * 181) * TO_RADIAN, glm::vec3(0.0f, 0.0f, 1.0f));
 	}
-	if (camera_mod == 5)
+	if (camera_mod == CAMERA_t)
 		set_tiger_eye();
+	if (camera_mod == CAMERA_g)
+		set_tiger_watch();
 
 	ModelViewProjectionMatrix = ProjectionMatrix * ViewMatrix * ModelMatrix;
 
@@ -1479,7 +1559,7 @@ int world_ob_cam;
 
 void move_camera(int direction_num)
 {
-	if (camera_mod != 4)
+	if (camera_mod != CAMERA_m)
 		return;
 
 	renew_cam_position(direction_num);
@@ -1506,7 +1586,7 @@ void mouse(int button, int state, int x, int y) {
 
 void rotate_camera(int axis)
 {
-	if (camera_mod > 4)
+	if (camera_mod > CAMERA_m)
 		return;
 
 	glm::mat4 axis_rotate;
@@ -1619,10 +1699,10 @@ void keyboard(unsigned char key, int x, int y) {
 		stop_flag = !stop_flag;
 		break;
 	case 't':
-		camera_mod = 5;
+		camera_mod = CAMERA_t;
 		break;
 	case 'g':
-		camera_mod = 6;
+		camera_mod = CAMERA_g;
 		break;
 	}
 }
@@ -1630,7 +1710,7 @@ void keyboard(unsigned char key, int x, int y) {
 void mousewheel(int button, int dir, int x, int y) {
 	int mod = glutGetModifiers();
 
-	if (mod != GLUT_ACTIVE_SHIFT || camera_mod == 5 || camera_mod == 6)
+	if (mod != GLUT_ACTIVE_SHIFT || camera_mod == CAMERA_t || camera_mod == CAMERA_g)
 		return;
 	if (dir > 0)
 		current_camera.fovy -= TO_RADIAN * CAM_ANGLE;
