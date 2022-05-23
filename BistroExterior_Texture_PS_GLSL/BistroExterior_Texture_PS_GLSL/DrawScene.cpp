@@ -882,7 +882,7 @@ void prepare_objects(void) {
 	prepare_tank();
 }
 
-int timestamp_scene;
+int timestamp_scene_tiger;
 int tiger_speed_flag;
 
 void draw_tiger(void) {
@@ -891,7 +891,7 @@ void draw_tiger(void) {
 	float rotation_angle_tiger_x = 0.0f;
 	float turn_angle_tiger = 0.0f;
 	float t;
-	int nt = timestamp_scene % 2370;
+	int nt = timestamp_scene_tiger % 2370;
 	glUseProgram(h_ShaderProgram_simple);
 
 	if (nt < 90)
@@ -1075,10 +1075,12 @@ void draw_tiger(void) {
 	
 }
 
+int timestamp_scene_moving_object;
+
 void draw_spider()
 {
 	float t = 0;
-	int nt = timestamp_scene % 1800;
+	int nt = timestamp_scene_moving_object % 1800;
 	glUseProgram(h_ShaderProgram_simple);
 	if (nt < 360)
 	{
@@ -1503,19 +1505,18 @@ void reshape(int width, int height) {
 }
 
 void timer_scene(int value) {
-	cur_frame_tiger = timestamp_scene % N_TIGER_FRAMES;
-	cur_frame_spider = timestamp_scene % N_SPIDER_FRAMES;
+	cur_frame_tiger = timestamp_scene_tiger % N_TIGER_FRAMES;
+	cur_frame_spider = timestamp_scene_moving_object % N_SPIDER_FRAMES;
 	glutPostRedisplay();
+	timestamp_scene_moving_object = (timestamp_scene_moving_object + 1) % INT_MAX;
 	if (stop_flag == 0)
-	{
-		timestamp_scene = (timestamp_scene + 1) % INT_MAX;
-		if (tiger_speed_flag == 1)
-			glutTimerFunc(70, timer_scene, 0);
-		else if (tiger_speed_flag == 2)
-			glutTimerFunc(10, timer_scene, 0);
-		else if (tiger_speed_flag == 3)
-			glutTimerFunc(30, timer_scene, 0);
-	}
+		timestamp_scene_tiger = (timestamp_scene_tiger + 1) % INT_MAX;
+	if (tiger_speed_flag == 1)
+		glutTimerFunc(70, timer_scene, 0);
+	else if (tiger_speed_flag == 2)
+		glutTimerFunc(10, timer_scene, 0);
+	else if (tiger_speed_flag == 3)
+		glutTimerFunc(30, timer_scene, 0);
 	glutTimerFunc(80, timer_scene, 0);
 }
 
