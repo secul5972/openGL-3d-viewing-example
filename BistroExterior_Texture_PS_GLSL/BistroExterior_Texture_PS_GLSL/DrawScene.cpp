@@ -948,7 +948,7 @@ void prepare_objects(void) {
 	prepare_wolf();
 }
 
-int timestamp_scene_tiger = 1650;
+int timestamp_scene_tiger;
 ;
 int tiger_eye_flag;
 int tiger_shake_head_flag;
@@ -969,20 +969,24 @@ void set_tiger_eye(void)
 	current_camera.vaxis[0] = vaxis.x; current_camera.vaxis[1] = vaxis.y; current_camera.vaxis[2] = vaxis.z;
 	current_camera.naxis[0] = naxis.x; current_camera.naxis[1] = naxis.y; current_camera.naxis[2] = naxis.z;
 
-	/*if (tiger_shake_head_flag == 1)
+	if (tiger_shake_head_flag == 1)
 	{
+		int nt = timestamp_scene_tiger % 40;
 		glm::mat4 axis_rotate = glm::mat4(1.0f);
 		glm::vec3 new_vaxis;
 		glm::vec3 new_naxis;
-		float angle = TO_RADIAN * CAM_ANGLE;
+		float angle;
+		if (nt < 20)
+			angle = -TO_RADIAN * CAM_ANGLE * nt / 2;
+		else angle = -TO_RADIAN * 10 + TO_RADIAN * CAM_ANGLE * (nt - 20) / 2;
 
 		axis_rotate = glm::rotate(glm::mat4(1.0f), angle, glm::vec3(uaxis[0], uaxis[1], uaxis[2]));
 		new_vaxis = glm::vec3(axis_rotate * vaxis);
 		new_naxis = glm::vec3(axis_rotate * naxis);
 		current_camera.vaxis[0] = new_vaxis[0];	current_camera.vaxis[1] = new_vaxis[1];	current_camera.vaxis[2] = new_vaxis[2];
 		current_camera.naxis[0] = new_naxis[0];	current_camera.naxis[1] = new_naxis[1];	current_camera.naxis[2] = new_naxis[2];
-		printf("%d\n", tiger_shake_head_flag);
-	}*/
+	}
+
 	set_ViewMatrix_from_camera_frame();
 
 	ProjectionMatrix = glm::perspective(current_camera.fovy, current_camera.aspect_ratio, current_camera.near_c, current_camera.far_c);
