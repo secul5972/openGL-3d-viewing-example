@@ -73,6 +73,7 @@ int camera_mod;
 
 using glm::mat4;
 
+//ViewMatrix 설정
 void set_ViewMatrix_from_camera_frame(void) {
 	ViewMatrix = glm::mat4(current_camera.uaxis[0], current_camera.vaxis[0], current_camera.naxis[0], 0.0f,
 		current_camera.uaxis[1], current_camera.vaxis[1], current_camera.naxis[1], 0.0f,
@@ -92,6 +93,7 @@ void set_current_camera(int camera_num) {
 	ViewProjectionMatrix = ProjectionMatrix * ViewMatrix;
 }
 
+//카메라 0, 1, 2, 3
 void initialize_camera(void) {
 	Camera* pCamera;
 
@@ -576,6 +578,7 @@ GLfloat* tiger_vertices[N_TIGER_FRAMES];
 int cur_frame_tiger = 0;
 int cur_frame_spider = 0;
 
+//geometry load 함수
 int read_geometry(GLfloat** object, int bytes_per_primitive, char* filename) {
 	int n_triangles;
 	FILE* fp;
@@ -937,7 +940,7 @@ void prepare_wolf(void) {
 	glBindVertexArray(0);
 }
 
-void prepare_objects(void) {
+void prepare_my_objects_20161611(void) {
 	prepare_tiger();
 	prepare_spider();
 	prepare_bike();
@@ -956,6 +959,7 @@ glm::mat4 ModelMatrix;
 
 #define CAM_ANGLE 1.0f
 
+//'t'
 void set_tiger_eye(void)
 {
 	glm::vec4 tiger_eye = ModelMatrix * glm::vec4(0.0f, -88.0f, 62.0f, 1.0f);
@@ -993,6 +997,7 @@ void set_tiger_eye(void)
 	ViewProjectionMatrix = ProjectionMatrix * ViewMatrix;
 }
 
+//'g'
 void set_tiger_watch(void)
 {
 	int nt = timestamp_scene_tiger % 2370;
@@ -1483,7 +1488,7 @@ void draw_wolf(void) {
 	glUseProgram(0);
 }
 
-void draw_objects()
+void draw_my_objects_20161611()
 {
 	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 	draw_tiger();
@@ -1502,7 +1507,7 @@ void draw_objects()
 void display(void) {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	draw_objects();
+	draw_my_objects_20161611();
 	draw_grid();
 	draw_axes();
 	draw_bistro_exterior();
@@ -1512,6 +1517,7 @@ void display(void) {
 
 #define CAM_TSPEED 10.0f
 
+//카메라 이동시 위치 설정
 void renew_cam_position(int dir) {
 
 	set_ViewMatrix_from_camera_frame();
@@ -1537,29 +1543,8 @@ void renew_cam_position(int dir) {
 	current_camera.pos[2] = new_cam_pos[2];
 }
 
-#define CAM_RSPEED 0.1f
-void renew_cam_orientation_rotation_around_v_axis(int angle) {
-	glm::mat3 RotationMatrix;
-	glm::vec3 direction;
-	glm::vec3 uaxis = glm::vec3(current_camera.uaxis[0], current_camera.uaxis[1], current_camera.uaxis[2]);
-	glm::vec3 vaxis = glm::vec3(current_camera.vaxis[0], current_camera.vaxis[1], current_camera.vaxis[2]);
-	glm::vec3 naxis = glm::vec3(current_camera.naxis[0], current_camera.naxis[1], current_camera.naxis[2]);
-
-	RotationMatrix = glm::mat3(glm::rotate(glm::mat4(1.0), CAM_RSPEED * TO_RADIAN * angle,
-		vaxis));
-
-	direction = RotationMatrix * uaxis;
-	current_camera.uaxis[0] = direction[0];
-	current_camera.uaxis[1] = direction[1];
-	current_camera.uaxis[2] = direction[2];
-	direction = RotationMatrix * naxis;
-	current_camera.naxis[0] = direction[0];
-	current_camera.naxis[1] = direction[1];
-	current_camera.naxis[2] = direction[2];
-}
-
 int world_ob_cam;
-
+//'w', 'a', 's', 'd', 'q', 'e'
 void move_camera(int direction_num)
 {
 	if (camera_mod != CAMERA_m)
@@ -1568,16 +1553,11 @@ void move_camera(int direction_num)
 	renew_cam_position(direction_num);
 	set_ViewMatrix_from_camera_frame();
 	ViewProjectionMatrix = ProjectionMatrix * ViewMatrix;
-	printf("pos:%f %f %f\n", current_camera.pos[0], current_camera.pos[1], current_camera.pos[2]);
-	printf("uaxis:%f %f %f\n", current_camera.uaxis[0], current_camera.uaxis[1], current_camera.uaxis[2]);
-	printf("vaxis:%f %f %f\n", current_camera.vaxis[0], current_camera.vaxis[1], current_camera.vaxis[2]);
-	printf("naxis:%f %f %f\n", current_camera.naxis[0], current_camera.naxis[1], current_camera.naxis[2]);
-	printf("val:%f %f %f %f %d %d\n", current_camera.fovy, current_camera.aspect_ratio, current_camera.near_c, current_camera.far_c, current_camera.move, current_camera.rotation_axis);
 	glutPostRedisplay();
 }
 
 int left_button;
-
+//마우스 좌측 버튼, 'u', 'v', 'n'과 같이 사용시 반대 방향 회전
 void mouse(int button, int state, int x, int y) {
 	if ((button == GLUT_LEFT_BUTTON)) {
 		if (state == GLUT_DOWN)
@@ -1587,6 +1567,7 @@ void mouse(int button, int state, int x, int y) {
 	}
 }
 
+//'u', 'v', 'n'
 void rotate_camera(int axis)
 {
 	if (camera_mod != CAMERA_m)
@@ -1640,7 +1621,6 @@ void rotate_camera(int axis)
 }
 
 int stop_flag;
-
 
 void keyboard(unsigned char key, int x, int y) {
 	switch (key) {
@@ -1710,6 +1690,7 @@ void keyboard(unsigned char key, int x, int y) {
 	}
 }
 
+//줌 인, 줌 아웃
 void mousewheel(int button, int dir, int x, int y) {
 	int mod = glutGetModifiers();
 
@@ -1735,14 +1716,16 @@ void reshape(int width, int height) {
 	glutPostRedisplay();
 }
 
+//애니메이션을 위한 timer
 void timer_scene(int value) {
 	cur_frame_tiger = timestamp_scene_tiger % N_TIGER_FRAMES;
 	cur_frame_spider = timestamp_scene_moving_object % N_SPIDER_FRAMES;
 	cur_frame_wolf = timestamp_scene_moving_object % N_WOLF_FRAMES;
-	glutPostRedisplay();
+	
 	timestamp_scene_moving_object = (timestamp_scene_moving_object + 1) % INT_MAX;
 	if (stop_flag == 0)
 		timestamp_scene_tiger = (timestamp_scene_tiger + 1) % INT_MAX;
+	glutPostRedisplay();
 	glutTimerFunc(50, timer_scene, 0);
 }
 
@@ -1799,7 +1782,7 @@ void prepare_scene(void) {
 	prepare_axes();
 	prepare_grid();
 	prepare_bistro_exterior();
-	prepare_objects();
+	prepare_my_objects_20161611();
 }
 
 void initialize_renderer(void) {
